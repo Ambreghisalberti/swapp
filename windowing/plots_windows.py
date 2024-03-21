@@ -79,7 +79,7 @@ def plot_characteristics_windows_with_condition(df_characteristics, df, conditio
     nbr_features = len(to_plot.columns)
 
     ########################################################################
-    # I don't know why I can't extract this part in a function!
+    # I don't know why I can't extract this part in a function! Ask Nico
     if 'axes' in kwargs and 'figure' in kwargs:    
         fig = kwargs.pop('figure')
         axes = kwargs.pop('axes')
