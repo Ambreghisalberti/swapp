@@ -1,14 +1,14 @@
 from .labels import prepare_df_labels
 from .nodata import prepare_df_missing_data
 from .MP import intersect_MP
-from utils import *
+from .utils import *
 
-
-def prepare_df(all_data, position, omni_data, win_length, paths, **kwargs):
+def prepare_df(all_data, position, omni_data, win_length, paths, labelled_days, **kwargs):
     data = all_data.copy()
     pos = position.copy()
     omni = omni_data.copy()
 
+    cut_nightside(pos, omni, data)
     resize_preprocess(pos, omni, data, win_length)
 
     '''
@@ -22,7 +22,7 @@ def prepare_df(all_data, position, omni_data, win_length, paths, **kwargs):
     print('Missing data done!')
     intersect_MP(data, pos, omni, win_length, 'Shue', **kwargs)
     print('Close to MP done!')
-    prepare_df_labels(data, win_length, paths)
+    prepare_df_labels(data, win_length, paths, labelled_days)
     print('Labels done!')
 
     for df in (data, pos, omni):

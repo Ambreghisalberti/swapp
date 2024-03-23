@@ -9,6 +9,26 @@ from space.models import planetary
 from space.plot import planet_env
 
 
+def diagnostic_windows(df, pos, omni, conditions, **kwargs):
+    if isinstance(conditions, str):
+        conditions = [conditions]
+
+    nbr_slices = max(np.sum([1 for arg in ['x_slice', 'y_slice', 'z_slice'] if arg in kwargs]), 1)
+    fig, axes = _make_figure_for_diagnostic(omni, conditions, **kwargs)
+
+    slice_kwargs = {arg: kwargs.pop(arg) for arg in ['x_slice', 'y_slice', 'z_slice'] if arg in kwargs}
+    for i, condition in enumerate(conditions):
+        subaxes = axes[:len(omni.columns)]
+        fig, subaxes = plot_characteristics_windows_with_condition(omni, df, condition, figure=fig, axes=subaxes,
+                                                                   **kwargs)
+        subaxes = get_pos_condition_subaxes(axes, i, nbr_slices)
+        fig, subaxes = plot_pos_windows_with_condition(pos, df, conditions, figure=fig,
+                                                       axes=subaxes, **slice_kwargs, **kwargs)
+
+    plt.tight_layout()
+    return fig, axes
+
+
 def plot_hist_2D(df, X, Y, ax, **kwargs):
     # Give colors because automatic ones are ugly.
 
@@ -72,6 +92,28 @@ def _make_axes_array(axes):
         raise Exception("Axes must be a dictionary or an array.")
 
 
+'''
+def _make_figure_for_features(nbr_features, **kwargs):
+    ########################################################################
+    # I don't know why I can't extract this part in a function! Ask Nico
+    if 'axes' in kwargs and 'figure' in kwargs:
+        fig = kwargs.pop('figure')
+        axes = kwargs.pop('axes')
+        axes = _make_axes_array(axes)
+        assert axes.size >= nbr_features, "The given axes' size must match the number of features to plot."
+    else:
+        ncols = kwargs.get('ncols', 4)
+        nrows = int(np.ceil(nbr_features / ncols))
+        fig, axes = plt.subplots(ncols=ncols, nrows=nrows, figsize=(5 * nrows, 5 * ncols))
+
+    assert isinstance(axes, np.ndarray), "The created axes must be an array."
+    assert axes.size == nbr_features, ("The array of Axes given as input must have the same length as the "
+                                       "number of features.")
+    axes = axes.flatten()[:nbr_features]
+    ##########################################################################
+    return fig, axes
+'''
+
 def plot_characteristics_windows_with_condition(df_characteristics, df, condition, **kwargs):
     windows = select_windows(df, condition)
     to_plot = df_characteristics.loc[windows.index.values]
@@ -95,6 +137,8 @@ def plot_characteristics_windows_with_condition(df_characteristics, df, conditio
                                        "number of features.")
     axes = axes.flatten()[:nbr_features]
     ##########################################################################
+
+    #fig, axes = _make_figure_for_features(nbr_features, **kwargs)
 
     for ax, feature in zip(axes, to_plot.columns):
         ax = plot_hist_1D(to_plot, feature, ax, label=condition, **kwargs)
@@ -121,26 +165,6 @@ def _make_figure_for_diagnostic(omni, conditions, **kwargs):
         fig, axes = plt.subplot_mosaic(mosaic_structure(omni, len(conditions), **kwargs),
                                        figsize=(4 * nrows, 4 * ncols))
         axes = np.array(list(axes.values()))
-    return fig, axes
-
-
-def diagnostic_windows(df, pos, omni, conditions, **kwargs):
-    if isinstance(conditions, str):
-        conditions = [conditions]
-
-    nbr_slices = max(np.sum([1 for arg in ['x_slice', 'y_slice', 'z_slice'] if arg in kwargs]), 1)
-    fig, axes = _make_figure_for_diagnostic(omni, conditions, **kwargs)
-
-    slice_kwargs = {arg: kwargs.pop(arg) for arg in ['x_slice', 'y_slice', 'z_slice'] if arg in kwargs}
-    for i, condition in enumerate(conditions):
-        subaxes = axes[:len(omni.columns)]
-        fig, subaxes = plot_characteristics_windows_with_condition(omni, df, condition, figure=fig, axes=subaxes,
-                                                                   **kwargs)
-        subaxes = get_pos_condition_subaxes(axes, i, nbr_slices)
-        fig, subaxes = plot_pos_windows_with_condition(pos, df, conditions, figure=fig,
-                                                       axes=subaxes, **slice_kwargs, **kwargs)
-
-    plt.tight_layout()
     return fig, axes
 
 

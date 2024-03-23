@@ -102,3 +102,8 @@ def windows_to_catalogue(df, win_duration, name):
     stops = df.index.values[win_length - 1::win_length]
     starts = stops - win_duration + resolution
     return create_catalogue(starts, stops, name)
+
+
+def cut_nightside(pos, omni, all_data):
+    for df in (pos, omni, all_data):
+        df[pos.X.values < 0] = np.nan
