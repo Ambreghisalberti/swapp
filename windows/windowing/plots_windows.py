@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 from windows.windowing.make_windows.utils import select_windows
 import numpy as np
 import string
-import sys
-sys.path.append('/home/ghisalberti/Documents/PycharmProjects/space/')
 from space.models import planetary
 from space.plot import planet_env
 

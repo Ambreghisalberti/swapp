@@ -1,7 +1,5 @@
 from ..utils import flag
 import numpy as np
-import sys
-sys.path.insert(0, '/home/ghisalberti/Documents/PycharmProjects/space/')
 from space.models import planetary as smp
 
 
