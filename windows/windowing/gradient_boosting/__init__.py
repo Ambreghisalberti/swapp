@@ -2,7 +2,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 import pandas as pd
 import numpy as np
+import os
 
+__HERE__ = os.path.dirname(__file__)
 
 def standardScaling(df):
     """ Precondition : df has to be very big, so the scaling is close to the one of the traintest of the model.
@@ -24,5 +26,5 @@ def pred(df, model):
 
 def pred_boosting(df):
     # Works only in 1.2.2 version of scikit learn : run "pip install scikit-learn==1.2.2 " before if needed
-    model = pd.read_pickle("boosting.pkl")
+    model = pd.read_pickle(f"{__HERE__}/boosting.pkl")
     pred(df, model)
