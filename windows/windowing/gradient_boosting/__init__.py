@@ -24,5 +24,5 @@ def pred(df, model):
 
 def pred_boosting(df):
     # Works only in 1.2.2 version of scikit learn : run "pip install scikit-learn==1.2.2 " before if needed
-    model = pd.read_pickle("/home/ghisalberti/Documents/PycharmProjects/windows/windowing/gradient_boosting/boosting.pkl")
+    model = pd.read_pickle("boosting.pkl")
     pred(df, model)

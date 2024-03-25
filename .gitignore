@@ -1,5 +1,4 @@
 windows/windowing/data
 windows/windowing/make_windows/tests.ipynb
-windows/windowing/gradient_boosting/boosting.pkl
 /windows/.idea/
 windows/windowing/__pycache__/
