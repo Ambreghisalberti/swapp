@@ -1,9 +1,9 @@
-from windowing.make_windows.utils import flag, none
+from ..utils import flag, none
 import numpy as np
 import pandas as pd
 from datetime import timedelta
-from catalogues import read_catalogue_events
-from windowing.make_windows.utils import time_resolution
+from ....catalogues import read_catalogue_events
+from ..utils import time_resolution
 
 
 def days_to_dates(days, df):

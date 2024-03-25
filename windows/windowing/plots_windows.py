@@ -1,6 +1,6 @@
 import matplotlib
 import matplotlib.pyplot as plt
-from windowing.make_windows.utils import select_windows
+from windows.windowing.make_windows.utils import select_windows
 import numpy as np
 import string
 import sys

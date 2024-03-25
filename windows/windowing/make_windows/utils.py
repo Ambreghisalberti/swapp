@@ -1,5 +1,5 @@
 import numpy as np
-from catalogues import create_catalogue
+from ...catalogues import create_catalogue
 
 
 def nbr_windows(df, win_length):

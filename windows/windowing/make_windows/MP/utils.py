@@ -1,4 +1,4 @@
-from windowing.make_windows.utils import flag
+from ..utils import flag
 import numpy as np
 import sys
 sys.path.insert(0, '/home/ghisalberti/Documents/PycharmProjects/space/')

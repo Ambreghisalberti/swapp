@@ -1,4 +1,4 @@
-from windowing.make_windows.utils import flag, none, all, any
+from ..utils import flag, none, all, any
 
 
 def is_missing(df):

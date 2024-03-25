@@ -1,9 +1,9 @@
 from ddt import ddt, data
 import unittest
-from windowing.make_windows.utils import *
+from windows.windowing.make_windows.utils import *
 import pandas as pd
-from windowing.make_windows import prepare_df
-from windowing.dataframes.utils import df_resolution
+from windows.windowing.make_windows import prepare_df
+from windows.windowing.make_windows.utils import time_resolution
 
 all_data = pd.read_pickle('/windowing/data/MMS1_data_GSM_5S_2015_2021.pkl')
 position = pd.read_pickle('/windowing/data/MMS1_pos_GSM_5S_2015_2021.pkl')
@@ -16,7 +16,7 @@ with open('/windowing/data/data/list_label_catalogues.ts') as file:
 class BuildWindows():
     def __init__(self, all_data, position, omni, win_duration, paths, **kwargs):
         self.win_duration = win_duration
-        self.resolution = df_resolution(all_data)
+        self.resolution = time_resolution(all_data)
         self.win_length = durationToNbrPts(self.win_duration, self.resolution)
 
         processed_data, processed_pos, processed_omni = prepare_df(all_data, position, omni, self.win_length, paths,

@@ -1,5 +1,5 @@
 import pandas as pd
-from windowing.gradient_boosting import pred_boosting
+from ...gradient_boosting import pred_boosting
 from .utils import *
 
 
