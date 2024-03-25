@@ -24,7 +24,7 @@ def is_labelled(df, labelled_days):
     indices = days_to_dates(labelled_days, df)
     df['labelled_data'] = 0
 
-    labelled_indices = df.index.isin(indices).index.values
+    labelled_indices = df[df.index.isin(indices)].index.values
     if len(labelled_indices) < len(indices):
         print('WARNING! Some labelled dates were not found in the data, pos, omni datasets!')
     df.loc[labelled_indices, 'labelled_data'] = np.ones(len(indices))
