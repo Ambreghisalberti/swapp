@@ -31,9 +31,9 @@ def plot_hist_2D(df, X, Y, ax, **kwargs):
 
     assert isinstance(ax, matplotlib.axes._axes.Axes), "The ax given as input must be of matplotlib type Axe."
 
-    bins = kwargs.pop('bins', 50)
+    bins = kwargs.pop('bins', 100)
     cmap = kwargs.pop('cmap', 'jet')
-    hist = ax.hist2d(df[X].values, df[Y].values, cmin=1, bins=bins, cmap=cmap, range=[[-25,25],[-25,25]],
+    hist = ax.hist2d(df[X].values, df[Y].values, cmin=1, bins=bins, cmap=cmap, range=[[-40,40],[-40,40]],
                      **kwargs)
     plt.colorbar(hist[3], ax=ax)
     return ax
@@ -44,7 +44,7 @@ def plot_hist_1D(df, X, ax, **kwargs):
 
     bins = kwargs.pop('bins', 50)
     alpha = kwargs.pop('alpha', 0.4)
-    ax.hist(df[X].values, bins=bins, alpha=alpha, **kwargs)
+    ax.hist(df[X].values, density=True, bins=bins, alpha=alpha, **kwargs)
     return ax
 
 
@@ -161,7 +161,8 @@ def _make_figure_for_diagnostic(omni, conditions, **kwargs):
         fig = kwargs.pop('figure')
     else:
         ncols = kwargs.get('ncols', 4)
-        nrows = np.ceil(len(omni.columns) / ncols) + len(conditions)
+        nrows = np.ceil(len(omni.columns) / ncols) + len(conditions)*2
+        # The *2 is because the position plots are twice as high
         fig, axes = plt.subplot_mosaic(mosaic_structure(omni, len(conditions), **kwargs),
                                        figsize=(4 * nrows, 4 * ncols))
         axes = np.array(list(axes.values()))
