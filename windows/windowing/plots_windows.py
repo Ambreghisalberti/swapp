@@ -1,6 +1,6 @@
 import matplotlib
 import matplotlib.pyplot as plt
-from windows.windowing.make_windows.utils import select_windows
+from .make_windows.utils import select_windows
 import numpy as np
 import string
 from space.models import planetary
@@ -20,8 +20,7 @@ def diagnostic_windows(df, pos, omni, conditions, **kwargs):
         fig, subaxes = plot_characteristics_windows_with_condition(omni, df, condition, figure=fig, axes=subaxes,
                                                                    **kwargs)
         subaxes = get_pos_condition_subaxes(axes, i, nbr_slices)
-        fig, subaxes = plot_pos_windows_with_condition(pos, df, conditions, figure=fig,
-                                                       axes=subaxes, **slice_kwargs, **kwargs)
+        fig, subaxes = plot_pos_windows_with_condition(fig, subaxes, pos, df, condition, **slice_kwargs, **kwargs)
 
     plt.tight_layout()
     return fig, axes
@@ -34,7 +33,8 @@ def plot_hist_2D(df, X, Y, ax, **kwargs):
 
     bins = kwargs.pop('bins', 50)
     cmap = kwargs.pop('cmap', 'jet')
-    hist = ax.hist2d(df[X].values, df[Y].values, cmin=1, bins=bins, cmap=cmap, **kwargs)
+    hist = ax.hist2d(df[X].values, df[Y].values, cmin=1, bins=bins, cmap=cmap, range=[[-25,25],[-25,25]],
+                     **kwargs)
     plt.colorbar(hist[3], ax=ax)
     return ax
 
@@ -60,24 +60,25 @@ def plot_pos_hist(pos, fig, ax, **kwargs):           # Transform with the slices
     ax[0] = plot_hist_2D(to_plot, 'X', 'Y', ax[0], **kwargs)
     ax[1] = plot_hist_2D(to_plot, 'X', 'Z', ax[1], **kwargs)
     ax[2] = plot_hist_2D(to_plot, 'Y', 'Z', ax[2], **kwargs)
-    return fig, ax
+    #return fig, ax
 
 
-def plot_pos_windows_with_condition(pos, df, condition, **kwargs):
+def plot_pos_windows_with_condition(fig, ax, pos, df, condition, **kwargs):
     """
     Precondition : ax must have a length of three.
     """
-    msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
-    fig, ax = planet_env.layout_earth_env(msh, **kwargs)
-
     windows = select_windows(df, condition)
     subpos = pos.loc[windows.index.values]
-    fig, ax = plot_pos_hist(subpos, fig, ax.flatten(), label=condition)
+    #fig, ax = plot_pos_hist(subpos, fig, ax.flatten(), label=condition)
+    plot_pos_hist(subpos, fig, ax.flatten(), label=condition)
 
-    for a in ax:
+    msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
+    fig, ax = planet_env.layout_earth_env(msh, figure=fig, axes=ax, **kwargs)
+
+    for a in ax.flatten():
         a.set_title(condition)
 
-    plt.tight_layout()
+    #plt.tight_layout()
     return fig, ax
 
 
@@ -146,6 +147,7 @@ def plot_characteristics_windows_with_condition(df_characteristics, df, conditio
 
 
 def get_pos_condition_subaxes(axes, i, nbr_slices):
+    axes = axes.flatten()
     if i == 0:
         subaxes = axes[-nbr_slices:]
     else:
@@ -181,9 +183,10 @@ def mosaic_structure(df, nbr_conditions, **kwargs):
         mosaic += '\n'
 
     for i in range(nbr_conditions):
+        add = ''
         for j in range(nbr_slices):
-            mosaic += alphabet[count]*ncols
+            add += alphabet[count]*ncols
             count += 1
-        mosaic += '\n'
+        mosaic += add+'\n'+add+'\n'   #This line is added twice to increase the heigth of the plots
 
     return mosaic
