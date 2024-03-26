@@ -44,7 +44,12 @@ def plot_hist_1D(df, X, ax, **kwargs):
 
     bins = kwargs.pop('bins', 50)
     alpha = kwargs.pop('alpha', 0.4)
-    ax.hist(df[X].values, density=True, bins=bins, alpha=alpha, **kwargs)
+    vmin = np.quantile(df.dropna()[X].values,0.01)
+    vmax = np.quantile(df.dropna()[X].values,0.99)
+    ax.hist(df[X].values, density=True, bins=bins, alpha=alpha, range=[vmin,vmax], **kwargs)
+    ax.set_xlabel(X)
+    ax.set_ylabel("Normalized count")
+
     return ax
 
 
@@ -164,8 +169,16 @@ def _make_figure_for_diagnostic(omni, conditions, **kwargs):
         nrows = np.ceil(len(omni.columns) / ncols) + len(conditions)*2
         # The *2 is because the position plots are twice as high
         fig, axes = plt.subplot_mosaic(mosaic_structure(omni, len(conditions), **kwargs),
-                                       figsize=(4 * nrows, 4 * ncols))
+                                       figsize=(4 * nrows, 2 * ncols))
         axes = np.array(list(axes.values()))
+
+    for i in range(2,len(conditions)+1):
+        nbr_slices = max(np.sum([1 for arg in ['x_slice', 'y_slice', 'z_slice'] if arg in kwargs]), 1)
+        for j in range(nbr_slices):
+            index = - i*nbr_slices - j -1
+            axes[index].sharex(axes[-1-j])
+            axes[index].sharey(axes[-1-j])
+
     return fig, axes
 
 
