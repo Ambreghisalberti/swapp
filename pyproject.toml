@@ -1,0 +1,40 @@
+[build-system]
+build-backend = "flit_core.buildapi"
+requires = ["flit_core"]
+
+[project]
+name = "swapp"
+version = "0.1.0"
+description = "Sliding windows analysis for plasma physics"
+keywords = ["windows", "plasma-physics"]
+authors = [
+    { name = "Ambre Ghisalberti", email = "ambre.ghisalberti@lpp.polytechnique.fr" }
+]
+
+maintainers = [
+    { name = "Ambre Ghisalberti", email = "ambre.ghisalberti@lpp.polytechnique.fr" }
+]
+
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+readme = "README.md"
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Physics",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = ["pandas", "numpy", "matplotlib", "scipy", "space", "tscat", "scikit-learn", "matplotlib", "ddt", "unittest"]
+
+
+[project.urls]
+homepage = "https://github.com/Ambreghisalberti/Windows"
+
+
