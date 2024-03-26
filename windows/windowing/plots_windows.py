@@ -166,10 +166,11 @@ def _make_figure_for_diagnostic(omni, conditions, **kwargs):
         fig = kwargs.pop('figure')
     else:
         ncols = kwargs.get('ncols', 4)
-        nrows = np.ceil(len(omni.columns) / ncols) + len(conditions)*2
+        nrows = np.ceil(len(omni.columns) / ncols) + len(conditions)
+        #nrows = np.ceil(len(omni.columns) / ncols) + len(conditions)*2
         # The *2 is because the position plots are twice as high
         fig, axes = plt.subplot_mosaic(mosaic_structure(omni, len(conditions), **kwargs),
-                                       figsize=(4 * nrows, 2 * ncols))
+                                       figsize=(3 * ncols, 3 * nrows))
         axes = np.array(list(axes.values()))
 
     for i in range(2,len(conditions)+1):
@@ -201,6 +202,6 @@ def mosaic_structure(df, nbr_conditions, **kwargs):
         for j in range(nbr_slices):
             add += alphabet[count]*ncols
             count += 1
-        mosaic += add+'\n'+add+'\n'   #This line is added twice to increase the heigth of the plots
-
+        #mosaic += add+'\n'+add+'\n'   #This line is added twice to increase the heigth of the plots
+        mosaic += add+'\n'
     return mosaic
