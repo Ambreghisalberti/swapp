@@ -1,4 +1,4 @@
-windows/windowing/data
-windows/windowing/make_windows/tests.ipynb
-/windows/.idea/
-windows/windowing/__pycache__/
+swapp/windowing/data
+swapp/windowing/make_windows/tests.ipynb
+/swapp/.idea/
+swapp/windowing/__pycache__/
