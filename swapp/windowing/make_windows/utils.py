@@ -80,7 +80,7 @@ def time_resolution(df):
 
 def select_windows(df, condition):
     """ Needs to have one for all the points of the window, not only for the last one!
-    Refactor flag function, and the counts of windows."""
+    Refactor flag function, and the counts of swapp."""
     if isinstance(condition, str):
         if condition == ('all'):
             return df

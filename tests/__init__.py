@@ -1,9 +1,9 @@
 from ddt import ddt, data
 import unittest
-from windows.windowing.make_windows.utils import *
+from swapp.windowing.make_windows.utils import *
 import pandas as pd
-from windows.windowing.make_windows import prepare_df
-from windows.windowing.make_windows.utils import time_resolution
+from swapp.windowing.make_windows import prepare_df
+from swapp.windowing.make_windows.utils import time_resolution
 
 all_data = pd.read_pickle('/windowing/data/MMS1_data_GSM_5S_2015_2021.pkl')
 position = pd.read_pickle('/windowing/data/MMS1_pos_GSM_5S_2015_2021.pkl')
