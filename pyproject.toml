@@ -35,6 +35,6 @@ dependencies = ["pandas", "numpy", "matplotlib", "scipy", "space", "tscat", "sci
 
 
 [project.urls]
-homepage = "https://github.com/Ambreghisalberti/Windows"
+homepage = "https://github.com/Ambreghisalberti/swapp"
 
 
