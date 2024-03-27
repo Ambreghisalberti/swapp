@@ -55,7 +55,11 @@ def flag(df, win_length, flagger, type=bool):
     if len(flagger['features']) > 1:
         tmp = flagger['merger'](tmp)
     df[flagger["name"]] = type(False)
-    df.iloc[::win_length, -1] = tmp
+
+    for i in range(1, win_length+1):
+        df.iloc[i::win_length, -1] = tmp[1:]
+
+    assert df.iloc[:,-1].sum() % win_length == 0, "The flag values sum is not a multiple of the size of the windows."
     # If flagger["feature"] contains several features, I will need to add a merger here, such as tmp.any(axis=1)
     # so tmp.flagger["merger"] with flagger['merger'] = np.any(axis=1)
 
