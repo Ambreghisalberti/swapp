@@ -3,7 +3,6 @@ import json
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from ..windowing.make_windows.utils import time_resolution, durationToNbrPts, select_windows
 
 def create_catalogue(starts, stops, name, author=''):
     """
@@ -107,16 +106,15 @@ def duplicate_catalogue(path_catalogue: str):
     return duplicate
 
 
-def select_and_export_windows_to_catalogues(all_data, win_duration, conditions):
-    dt = time_resolution(all_data)
-    win_length = durationToNbrPts(win_duration, dt)
-    df = select_windows(all_data, conditions)
+def export_windows_to_catalogues(df_windows, win_length, time_resolution, win_duration):
     assert len(
-        df) % win_length == 0, "The select_window functions does not return a dataframe compatible with win_length"
+        df_windows) % win_length == 0, \
+        "The select_window functions does not return a dataframe compatible with win_length"
 
-    starts = df.index.values[::win_length]
-    stops = df.index.values[win_length - 1::win_length]
-    assert (stops - starts != win_duration - dt).sum() == 0, "The obtained windows don't have the expected duration."
+    starts = df_windows.index.values[::win_length]
+    stops = df_windows.index.values[win_length - 1::win_length]
+    assert (stops - starts != win_duration - time_resolution).sum() == 0, \
+        "The obtained windows don't have the expected duration."
 
     date = str(datetime.now())[:10]
     dt = str(win_duration).split(' ')
