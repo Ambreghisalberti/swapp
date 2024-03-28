@@ -6,14 +6,14 @@ import pandas as pd
 from swapp.windowing.make_windows import prepare_df
 from swapp.windowing.make_windows.utils import time_resolution
 
-all_data = pd.read_pickle('/windowing/data/MMS1_data_GSM_5S_2015_2021.pkl')
-position = pd.read_pickle('/windowing/data/MMS1_pos_GSM_5S_2015_2021.pkl')
-omni = pd.read_pickle('/windowing/data/OMNI_data_5S_2015_2021.pkl')
+all_data = pd.read_pickle(f'{__path__}/../swapp/windowing/data/MMS1_data_GSM_5S_2015_2021.pkl')
+position = pd.read_pickle(f'{__path__}/../swapp/windowing/data/MMS1_pos_GSM_5S_2015_2021.pkl')
+omni = pd.read_pickle(f'{__path__}/../swapp/windowing/data/OMNI_data_5S_2015_2021.pkl')
 
-with open('/windowing/data/data/list_label_catalogues.ts') as file:
+with open(f'{__path__}/../swapp/windowing/data/data/list_label_catalogues.ts') as file:
     paths = file.read().splitlines()
 
-with open('/windowing/data/data/list_labelled_days.ts') as file:
+with open(f'{__path__}/../swapp/windowing/data/data/list_labelled_days.ts') as file:
     labelled_days = file.read().splitlines()
 
 win_durations = [np.timedelta64(8, 'h'), np.timedelta64(4, 'h'),
