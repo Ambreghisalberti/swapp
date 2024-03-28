@@ -2,11 +2,8 @@ from ddt import ddt, data, unpack
 import sys
 import unittest
 import pandas as pd
-from ..windowing.make_windows import prepare_df
-from ..windowing.make_windows.utils import *
-
-#from swapp.windowing.make_windows import prepare_df
-#from swapp.windowing.make_windows.utils import *
+from swapp.windowing.make_windows import prepare_df
+from swapp.windowing.make_windows.utils import *
 
 #import os
 #__HERE__ = os.path.abspath(__file__)
