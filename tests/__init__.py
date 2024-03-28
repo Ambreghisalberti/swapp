@@ -9,7 +9,7 @@ import os
 __HERE__ = os.path.abspath(__file__)
 
 # path = f'{__HERE__}/../swapp/windowing/data/
-path = '/home/ghisalberti/swapp/swapp/windowing/data/'
+path = '/home/ghisalberti/make_datasets/'
 
 all_data = pd.read_pickle(path + 'MMS1_data_GSM_5S_2015_2021.pkl')
 position = pd.read_pickle(path + 'MMS1_pos_GSM_5S_2015_2021.pkl')
