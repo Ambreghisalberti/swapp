@@ -7,16 +7,18 @@ from swapp.windowing.make_windows import prepare_df
 from swapp.windowing.make_windows.utils import time_resolution
 import os
 __HERE__ = os.path.abspath(__file__)
-print(__HERE__)
 
-all_data = pd.read_pickle(f'{__HERE__}/../../swapp/windowing/data/MMS1_data_GSM_5S_2015_2021.pkl')
-position = pd.read_pickle(f'{__HERE__}/../swapp/windowing/data/MMS1_pos_GSM_5S_2015_2021.pkl')
-omni = pd.read_pickle(f'{__HERE__}/../swapp/windowing/data/OMNI_data_5S_2015_2021.pkl')
+# path = f'{__HERE__}/../swapp/windowing/data/
+path = '/home/ghisalberti/swapp/swapp/windowing/data/'
 
-with open(f'{__HERE__}/../swapp/windowing/data/data/list_label_catalogues.ts') as file:
+all_data = pd.read_pickle(path + 'MMS1_data_GSM_5S_2015_2021.pkl')
+position = pd.read_pickle(path + 'MMS1_pos_GSM_5S_2015_2021.pkl')
+omni = pd.read_pickle(path + 'OMNI_data_5S_2015_2021.pkl')
+
+with open(path + 'list_label_catalogues.ts') as file:
     paths = file.read().splitlines()
 
-with open(f'{__HERE__}/../swapp/windowing/data/data/list_labelled_days.ts') as file:
+with open(path + 'list_labelled_days.ts') as file:
     labelled_days = file.read().splitlines()
 
 win_durations = [np.timedelta64(8, 'h'), np.timedelta64(4, 'h'),
