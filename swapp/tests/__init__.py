@@ -1,13 +1,15 @@
 from ddt import ddt, data, unpack
 import sys
 import unittest
-from swapp.windowing.make_windows.utils import *
 import pandas as pd
-from swapp.windowing.make_windows import prepare_df
-from swapp.windowing.make_windows.utils import time_resolution
-import os
-__HERE__ = os.path.abspath(__file__)
+from ..windowing.make_windows import prepare_df
+from ..windowing.make_windows.utils import *
 
+#from swapp.windowing.make_windows import prepare_df
+#from swapp.windowing.make_windows.utils import *
+
+#import os
+#__HERE__ = os.path.abspath(__file__)
 # path = f'{__HERE__}/../swapp/windowing/data/
 path = '/home/ghisalberti/make_datasets/'
 
