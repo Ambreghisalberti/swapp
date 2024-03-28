@@ -7,6 +7,7 @@ from swapp.windowing.make_windows import prepare_df
 from swapp.windowing.make_windows.utils import time_resolution
 import os
 __HERE__ = os.path.abspath(__file__)
+print(__HERE__)
 
 all_data = pd.read_pickle(f'{__HERE__}/../swapp/windowing/data/MMS1_data_GSM_5S_2015_2021.pkl')
 position = pd.read_pickle(f'{__HERE__}/../swapp/windowing/data/MMS1_pos_GSM_5S_2015_2021.pkl')
