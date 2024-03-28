@@ -1,4 +1,5 @@
-from ddt import ddt, data
+from ddt import ddt, data, unpack
+import sys
 import unittest
 from swapp.windowing.make_windows.utils import *
 import pandas as pd
@@ -12,31 +13,19 @@ omni = pd.read_pickle('/windowing/data/OMNI_data_5S_2015_2021.pkl')
 with open('/windowing/data/data/list_label_catalogues.ts') as file:
     paths = file.read().splitlines()
 
+with open('/windowing/data/data/list_labelled_days.ts') as file:
+    labelled_days = file.read().splitlines()
 
-class BuildWindows():
-    def __init__(self, all_data, position, omni, win_duration, paths, **kwargs):
-        self.win_duration = win_duration
-        self.resolution = time_resolution(all_data)
-        self.win_length = durationToNbrPts(self.win_duration, self.resolution)
-
-        processed_data, processed_pos, processed_omni = prepare_df(all_data, position, omni, self.win_length, paths,
-                                                                   **kwargs)
-
-        self.data = processed_data
-        self.pos = processed_pos
-        self.omni = processed_omni
-        self.dataset = pd.concat([self.data, self.pos], axis=1)
-
-
-win_durations = []
-test_windowings = []
-for win_duration in win_durations:
-    test_windowings += [BuildWindows(all_data, position, omni, win_duration, paths)]
+win_durations = [np.timedelta64(8, 'h'), np.timedelta64(4, 'h'),
+                 np.timedelta64(2, 'h'), np.timedelta64(30, 'm'),
+                 np.timedelta64(10, 'm')]
 
 
 @ddt
 class TestOriginalData(unittest.TestCase):
 
+    @data((position,omni),(position,all_data),(all_data,omni))
+    @unpack
     def have_same_index(self, df1, df2):
         self.assertEqual(len(df1), len(df2))
         times1 = df1.index.values
@@ -44,258 +33,165 @@ class TestOriginalData(unittest.TestCase):
         for i in range(len(times1)):
             self.assertEqual(times1[i], times2[i])
 
-
-    @data(*test_windowings)
-    def test_pos_omni_have_same_index(self):
-        self.have_same_index(self.pos, self.omni)
-
-
-'''
-    @data((position, processed_data))
-    @unpack
-    def test_pos_data_have_same_index(self, pos, df):
-        self.have_same_index(pos, df)
-
-    @data((omni_data, processed_data))
-    @unpack
-    def test_omni_data_have_same_index(self, omni, df):
-        self.have_same_index(omni, df)
-
-    @data((processed_data, position))
+    @data((all_data, position))
     @unpack
     def test_more_nans_in_data_than_pos(self, df, pos):
         self.assertLessEqual(len(df.dropna()), len(pos.dropna()))
 
 
-@ddt
-class TestNumberWindows(unittest.TestCase):
+def generate_test_class(all_data, pos, omni, win_duration, paths, labelled_days, **kwargs):
+    class TestOriginalData(unittest.TestCase):
 
-    def smaller_than_total_windows(self, df, win_length, column):  # Nom plus court?
-        self.assertLessEqual(df[column].sum(), nbr_windows(df, win_length))
-
-    @data((dataset, win_length))
-    @unpack
-    def test_less_empty_windows_than_total_windows(self, df, win_length):
-        self.smaller_than_total_windows(df, win_length, 'isEmpty')
-
-    @data((dataset, win_length))
-    @unpack
-    def test_less_partial_windows_than_total_windows(self, df, win_length):
-        self.smaller_than_total_windows(df, win_length, 'isPartial')
-
-    @data((dataset, win_length))
-    @unpack
-    def test_less_full_windows_than_total_windows(self, df, win_length):
-        self.smaller_than_total_windows(df, win_length, 'isFull')
-
-    @data((dataset, win_length))
-    @unpack
-    def test_less_windows_close_to_MP_than_total_windows(self, df, win_length):
-        self.smaller_than_total_windows(df, win_length, 'isCloseToMP')
-
-    @data((dataset, win_length))
-    @unpack
-    def test_less_windows_encountering_MSP_MSH_than_total_windows(self, df, win_length):
-        self.smaller_than_total_windows(df, win_length, 'encountersMSPandMSH')
-
-    @data((dataset, win_length))
-    @unpack
-    def test_less_labelled_windows_than_total_windows(self, df, win_length):
-        self.smaller_than_total_windows(df, win_length, 'isLabelled')
+        @classmethod
+        def setUpClass(self):
+            self.resolution = time_resolution(all_data)
+            self.win_length = time_resolution(win_duration, self.resolution)
+            self.data, self.pos, self.omni = prepare_df(all_data, pos, omni, win_duration, paths, labelled_days)
 
 
-@ddt
-class TestWindows(unittest.TestCase):
-
-    def size_windows(self, df, win_length, win_duration, time_index):
-        #resolution = df_resolution(df)
-        for t in time_index:
-            self.assertEqual(len(get_window(df,t,win_duration)), win_length)
+        @data('isFull', 'isEmpty', 'isPartial', 'encountersMSPandMSH', 'isCloseToMP',
+              'isLabelled', 'containsLabelledBL')
+        def test_characteristics_multiples_of_winlength(self, column):
+            self.assertEqual(self.data[column].sum() % self.win_length, 0)
 
 
-@ddt
-class TestSizeWindows(TestWindows, unittest.TestCase):
-
-    @data((dataset, win_length, win_duration))
-    @unpack
-    def test_size_empty_windows(self, df, win_length, win_duration):
-        self.size_windows(df, win_length, win_duration, df[df.isEmpty.values].index.values)
-
-    @data((dataset, win_length, win_duration,))
-    @unpack
-    def test_size_full_windows(self, df, win_length, win_duration):
-        self.size_windows(df, win_length, win_duration, df[df.isFull.values].index.values)
-
-    @data((dataset, win_length, win_duration))
-    @unpack
-    def test_size_partial_windows(self, df, win_length, win_duration):
-        self.size_windows(df, win_length, win_duration, df[df.isPartial.values].index.values)
-
-    @data((dataset, win_length, win_duration))
-    @unpack
-    def test_size_windows_close_to_MP(self, df, win_length, win_duration):
-        self.size_windows(df, win_length, win_duration, df[df.isCloseToMP.values].index.values)
-
-    @data((dataset, win_length, win_duration))
-    @unpack
-    def test_size_windows_encountering_MSP_MSH(self, df, win_length, win_duration):
-        self.size_windows(df, win_length, win_duration, df[df.encountersMSPandMSH.values].index.values)
-
-    @data((dataset, win_length, win_duration))
-    @unpack
-    def test_size_labelled_windows(self, df, win_length, win_duration):
-        self.size_windows(df, win_length, win_duration, df[df.isLabelled.values].index.values)
+        def make_windows(self, condition):
+            windows = select_windows(self.data, condition)
+            starts = windows.index.values[::self.win_length]
+            stops = windows.index.values[self.win_length - 1::self.win_length]
+            return starts, stops
 
 
-@ddt
-class TestStrictAuxiliaryData(TestWindows, unittest.TestCase):
-
-    @data((dataset, win_duration))
-    @unpack
-    def test_empty_windows_are_empty(self, df, win_duration):
-        self.size_windows(df[['Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Vz', 'Tp']].dropna(), 0, win_duration,
-                          df[df.isEmpty.values].index.values)
-
-    @data((dataset, win_length, win_duration))
-    @unpack
-    def test_full_windows_are_full(self, df, win_length, win_duration):
-        self.size_windows(df[['Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Vz', 'Tp']].dropna(), win_length, win_duration,
-                          df[df.isFull.values].index.values)
-
-    @data((dataset, win_length, win_duration))
-    @unpack
-    def test_partial_windows_are_partial(self, df, win_length, win_duration):
-        resolution = df_resolution(df)
-        time_indices = df[df.isPartial.values].index.values[1:]
-        for t in time_indices:
-            self.assertLess(
-                len(get_window_features(df, t, win_duration,
-                                        ['Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Vz', 'Tp']).dropna()),
-                win_length)
-            self.assertGreaterEqual(
-                len(get_window_features(df, t, win_duration, 
-                ['Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Vz', 'Tp']).dropna()),
-                0)
-
-    @data((dataset, win_length))
-    @unpack
-    def test_complementarity_full_empty_partial(self, df, win_length):
-        self.assertEqual(df.isFull.sum() + df.isEmpty.sum() + df.isPartial.sum(), nbr_windows(df, win_length))
-        self.assertEqual(
-            (df.isEmpty.values.astype(int) + df.isFull.values.astype(int) + df.isPartial.values.astype(int) > 1).sum(),
-            0)
-
-    @data(dataset)
-    def test_regions_are_complementary(self, df):
-        nbr_regions = df.isMSP.values + df.isMSH.values + df.isSW.values
-        for val in nbr_regions:
-            self.assertEqual(val, 1)
-
-    @data((dataset, win_length, win_duration))
-    @unpack
-    def test_encountering_MSP_and_MSH(self, df, win_length, win_duration):
-        resolution = df_resolution(df)
-        time_indices = df[df.encountersMSPandMSH.values].index.values
-        for t in time_indices:
-            [nbr_MSP, nbr_MSH] = get_window_features(df, t, win_duration, ['isMSP','isMSH']).sum()
-            self.assertLess(nbr_MSP, win_length)
-            self.assertGreater(nbr_MSP, 0)
-            self.assertLess(nbr_MSH, win_length)
-            self.assertGreater(nbr_MSH, 0)
-
-    @data(dataset)
-    def test_BL_points_are_labelled(self, df):
-        are_labelled = df[df.label.values.astype(bool)].labelled_data.values
-        for val in are_labelled:
-            self.assertEqual(val, True)
-
-    @data(dataset)
-    def test_windows_with_BL_points_contain_BL(self, df):
-        contains_BL = df[df.nbrLabelledBL.values > 0].containsLabelledBL.values
-        for val in contains_BL:
-            self.assertEqual(val, True)
-
-    @data(dataset)
-    def test_windows_containing_BL_have_BL_points(self, df):
-        nbr_BL = df[df.containsLabelledBL.values].nbrLabelledBL.values
-        for val in nbr_BL:
-            self.assertGreaterEqual(val, 0)
-
-    @data(dataset)
-    def test_isRegion_really_is_region(self, df):
-        values, counts = np.unique(df.regions_pred.values, return_counts=True)
-        is_regions = ['isMSP', 'isMSH', 'isSW']
-        for i, isRegion in enumerate(is_regions):
-            self.assertEqual(counts[i], df[isRegion].sum())
-
-    @data(dataset, win_length, win_duration)
-    @unpack
-    def test_msp_msh_windows_have_little_sw(self, df, win_length, win_duration):
-        time_indices = df[df.encountersMSPandMSH.values].index.values
-        for t in time_indices:
-            nbr_SW = get_window_features(df, t, win_duration, 'isSW').sum()
-            self.assertLess(nbr_SW, win_length * 0.8)
-
-    @data(dataset)
-    def test_bl_points_are_close_to_MP(self, df):
-        subdf = df[df.label.values.astype(bool)]
-        time_indices = subdf.index.values
-        relative_dist_to_mp = abs(subdf.r_mp.values - subdf.R.values) / subdf.r_mp.values
-        for t, val in zip(time_indices, relative_dist_to_mp):
-            self.assertLess(val, 0.4)
+        @data('isFull', 'isEmpty', 'isPartial', 'encountersMSPandMSH', 'isCloseToMP',
+              'isLabelled', 'containsLabelledBL')
+        def test_windows_duration(self, column):
+            starts, stops = self.make_windows(column)
+            self.assertEqual(len(starts), len(stops))
+            self.assertEqual((stops-starts != win_duration - self.resolution).sum(), 0)
 
 
-@ddt
-class TestFlexibleAuxiliaryData(unittest.TestCase):
-
-    def setUp(self):
-        self.fails_lots_of_SW = False
-        self.times_lots_of_SW = []
-        self.fails_BL_far_from_MP = False
-        self.times_BL_far_from_MP = []
-
-    def tearDown(self):
-        if self.fails_lots_of_SW:
-            self.plot(self.times_lots_of_SW)
-        if self.fails_BL_far_from_MP:
-            self.plot(self.times_BL_far_from_MP)
-
-    @data((dataset, win_length, win_duration))
-    @unpack
-    def test_msp_msh_windows_have_little_sw(self, df, win_length, win_duration):
-        time_indices = df[df.encountersMSPandMSH.values].index.values
-        for t in time_indices:
-            nbr_SW = get_window_features(df, t, win_duration, 'isSW').sum()
-
-            try:
-                self.assertLess(nbr_SW, win_length * 0.8)
-            except Exception:
-                self.times_lots_of_SW += [t]
-
-        nb_fails = len(self.times_lots_of_SW)
-        if nb_fails > 0:
-            print(f'test_msp_msh_windows_have_little_sw failed {nb_fails} times.')
-            self.fails_lots_of_SW = True
-            self.data = df
-
-    @data(dataset)
-    def test_bl_points_are_close_to_MP(self, df):
-        subdf = df[df.label.values.astype(bool)]
-        time_indices = subdf.index.values
-        relative_dist_to_mp = abs(subdf.r_mp.values - subdf.R.values) / subdf.r_mp.values
-        for t, val in zip(time_indices, relative_dist_to_mp):
-            try:
-                self.assertLess(val, 0.4)
-            except Exception:
-                self.times_BL_far_from_MP += [t]
-
-        nb_fails = len(self.times_BL_far_from_MP)
-        if nb_fails > 0:
-            print(f'test_bl_points_are_close_to_MP failed {nb_fails} times.')
-            self.fails_BL_far_from_MP = True
-            self.data = df
-'''
+        @data('isFull', 'isEmpty', 'isPartial', 'encountersMSPandMSH', 'isCloseToMP',
+              'isLabelled', 'containsLabelledBL')
+        def test_windows_size(self, column):
+            starts, stops = self.make_windows(column)
+            for start, stop in zip(starts, stops):
+                win = self.data[start : stop]
+                self.assertEqual(len(win), self.win_length)
 
 
-if __name__ == '__main__':
-    unittest.main(argv=[''], exit=False)
+        @data('isFull', 'isEmpty', 'isPartial', 'encountersMSPandMSH', 'isCloseToMP',
+              'isLabelled', 'containsLabelledBL')
+        def test_windows_have_same_characteristics(self, column):
+            starts, stops = self.make_windows(column)
+            for t in range(len(starts)):
+                win = get_window_features(self.data, t, win_duration).values
+                values = np.unique(win)
+                self.assertEqual(len(values), 0)
+
+
+        def check_number_present_data(self, starts, size):
+            for t in range(len(starts)):
+                win = get_window_features(self.data, t, win_duration,
+                                          ['Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Vz', 'Tp']).values
+                self.assertEqual(len(win.dropna()), size)
+
+        def test_empty_windows_are_empty(self):
+            starts, _ = self.make_windows('isEmpty')
+            self.check_number_present_data(self, starts, 0)
+
+        def test_full_windows_are_full(self):
+            starts, _ = self.make_windows('isFull')
+            self.check_number_present_data(self, starts, self.win_length)
+
+        def test_partial_windows_are_partial(self):
+            starts, _ = self.make_windows('isPartial')
+            for t in range(len(starts)):
+                win = get_window_features(self.data, t, win_duration,
+                                          ['Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Vz', 'Tp']).values
+                self.assertLess(len(win.dropna()), self.win_length)
+                self.assertGreaterEqual(len(win.dropna()), 0)
+
+
+        def test_complementarity_full_empty_partial(self):
+            self.assertEqual(self.data.isFull.sum() + self.data.isEmpty.sum() + self.data.isPartial.sum(),
+                             len(self.data))
+            self.assertEqual((self.data.isEmpty.values.astype(int) + self.data.isFull.values.astype(int)
+                 + self.data.isPartial.values.astype(int) > 1).sum(),0)
+
+
+        def test_regions_are_complementary(self):
+            nbr_regions = (self.data.isMSP.values.astype(int) + self.data.isMSH.values.astype(int)
+                           + self.data.isSW.values.astype(int))
+            self.assertEqual((nbr_regions != 1).sum(), 0)
+
+
+        def test_encountering_MSP_and_MSH(self):
+            windows = select_windows(self.data, 'encountersMSPandMSH')
+            nbr_regions = windows.isMSP.values.astype(int) + windows.isMSH.values.astype(int)
+            self.assertEqual((nbr_regions != 1).sum(), 0)
+            self.assertGreater(windows.isMSP.sum(), 0)
+            self.assertGreater(windows.isMSH.sum(), 0)
+
+
+        def test_BL_points_are_labelled(self):
+            windows = select_windows(self.data, 'label')
+            self.assertEqual(windows.isLabelled.sum(), len(windows))
+
+        def test_windows_with_BL_points_contain_BL(self):
+            contains_BL = self.data[self.data.nbrLabelledBL.values > 0]
+            self.assertEqual((contains_BL.containsLabelledBL.values == False).sum(), 0)
+
+        def test_windows_containing_BL_have_BL_points(self):
+            contains_BL = select_windows(self.data, 'containsLabelledBL')
+            nbr_BL_points = contains_BL.nbrLabelledBL.values
+            self.assertEqual((nbr_BL_points < 1).sum(), 0)
+
+        def test_isRegion_really_is_region(self, df):
+            values, counts = np.unique(self.data.regions_pred.values, return_counts=True)
+            is_regions = ['isMSP', 'isMSH', 'isSW']
+            for i, isRegion in enumerate(is_regions):
+                self.assertEqual(counts[i], self.data[isRegion].sum())
+
+        def test_msp_msh_windows_have_little_sw(self):
+            starts, stops = self.make_windows('encountersMSPandMSH')
+            times_lots_of_SW = []
+            for start in starts:
+                nbr_SW = get_window_features(self.data, start, win_duration, 'isSW').sum()
+                try:
+                    self.assertLess(nbr_SW, self.win_length * 0.8)
+                except Exception:
+                    times_lots_of_SW += [start]
+
+            nb_fails = len(times_lots_of_SW)
+            if nb_fails > 0:
+                print(f'test_msp_msh_windows_have_little_sw failed {nb_fails} times.')
+                # Plot TODO
+
+
+        @data(position)
+        def test_BL_points_are_close_to_MP(self, pos):
+            time_indices = all_data[all_data.label.values.astype(bool)].index.values
+            subpos = pos.loc[time_indices]
+            relative_dist_to_mp = abs(subpos.r_mp.values - subpos.R.values) / subpos.r_mp.values
+            times_BL_far_from_MP = []
+            for t, val in zip(time_indices, relative_dist_to_mp):
+                try:
+                    self.assertLess(val, 0.4)
+                except Exception:
+                    times_BL_far_from_MP += [t]
+
+            nb_fails = len(times_BL_far_from_MP)
+            if nb_fails > 0:
+                print(f'test_bl_points_are_close_to_MP failed {nb_fails} times.')
+                # Plot TODO
+
+
+
+    return TestOriginalData
+
+module_obj = sys.modules[__name__]
+
+for i, win_duration in enumerate(win_durations):
+    module_obj.__dict__[f"Test_{i}"] = generate_test_class(all_data, position, omni, win_duration, paths, labelled_days)
+
+unittest.main(argv=[''], exit=False)
