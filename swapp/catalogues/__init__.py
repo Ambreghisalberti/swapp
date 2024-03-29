@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-def create_catalogue(starts, stops, name, author=''):
+def create_catalogue(starts, stops, name, author='', **kwargs):
     """
     start and stop are lists or arrays of start and stop times, """
     catalogue = tscat.create_catalogue(name=name, author=author, events=[])

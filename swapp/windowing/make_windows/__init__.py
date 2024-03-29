@@ -5,7 +5,7 @@ from .utils import *
 
 def prepare_df(all_data, position, omni_data, win_duration, paths, labelled_days, **kwargs):
     win_length = durationToNbrPts(win_duration, time_resolution(all_data))
-    
+
     data = all_data.copy()
     pos = position.copy()
     omni = omni_data.copy()

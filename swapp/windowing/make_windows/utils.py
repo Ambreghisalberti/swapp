@@ -64,14 +64,14 @@ def flag(df, win_length, flagger, type=bool):
     # so tmp.flagger["merger"] with flagger['merger'] = np.any(axis=1)
 
 
-def get_window(df, t_end, win_duration):
+def get_window(df, t_start, win_duration):
     resolution = time_resolution(df)
-    return df.loc[t_end - win_duration + resolution:t_end]
+    return df.loc[t_start : t_start + win_duration - resolution]
 
 
-def get_window_features(df, t_end, win_duration, features):
+def get_window_features(df, t_start, win_duration, features):
     resolution = time_resolution(df)
-    return df.loc[t_end - win_duration + resolution:t_end, features]
+    return df.loc[t_start : t_start + win_duration - resolution, features]
 
 
 def time_resolution(df):
