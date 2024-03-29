@@ -10,10 +10,19 @@ def create_catalogue(starts, stops, name, author='', **kwargs):
     catalogue = tscat.create_catalogue(name=name, author=author, events=[])
     events = []
 
-    for start, stop in zip(starts, stops):
+    are_tags = False
+    if 'tags' in kwargs:
+        are_tags = True
+        tags = kwargs['tags']
+        assert len(tags)==len(starts), "For the current version of this function, you need to give tags for every event."
+
+    for i, (start, stop) in enumerate(zip(starts, stops)):
         start = dates_to_datetime(start)
         stop = dates_to_datetime(stop)
-        events += [tscat.create_event(start=start, stop=stop, author=author)]
+        if are_tags:
+            events += [tscat.create_event(start=start, stop=stop, author=author, tags=tags[i])]
+        else:
+            events += [tscat.create_event(start=start, stop=stop, author=author)]
     tscat.add_events_to_catalogue(catalogue, events)
 
     return catalogue
