@@ -45,5 +45,4 @@ def is_around_mp(df):
 
 
 def flag_around_mp(df, win_length):
-    flag(df, win_length, {"fun": lambda x: np.logical_not(any(x)), "name": "isCloseToMP",
-                          "features": ["is_around_mp"]})
+    flag(df, win_length, {"fun": any, "name": "isCloseToMP", "features": ["is_around_mp"]})
