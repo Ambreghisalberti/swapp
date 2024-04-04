@@ -184,24 +184,30 @@ def _make_figure_for_diagnostic(omni, conditions, **kwargs):
 
 
 def mosaic_structure(df, nbr_conditions, **kwargs):
-    alphabet = list(string.ascii_uppercase)
+    #alphabet = list(string.ascii_uppercase)
     nbr_slices = max(np.sum([1 for arg in ['x_slice', 'y_slice', 'z_slice'] if arg in kwargs]), 1)
-    mosaic = ""
+    #mosaic = ""
+    mosaic = []
     nbr_features = len(df.columns)
     ncols = kwargs.get('ncols', 4)
     nrows = int(np.ceil(nbr_features/ncols))
     count = 0
     for i in range(nrows):
+        temp = []
         for j in range(ncols):
-            mosaic += alphabet[count]*nbr_slices
+            #mosaic += alphabet[count]*nbr_slices
+            temp += [str(count)]*nbr_slices
             count += 1
-        mosaic += '\n'
-
+        #mosaic += '\n'
+        mosaic += [temp]
     for i in range(nbr_conditions):
-        add = ''
+        #add = ''
+        add = []
         for j in range(nbr_slices):
-            add += alphabet[count]*ncols
+            #add += alphabet[count]*ncols
+            add += [str(count)]*ncols
             count += 1
         #mosaic += add+'\n'+add+'\n'   #This line is added twice to increase the heigth of the plots
-        mosaic += add+'\n'
+        #mosaic += add+'\n'
+        mosaic += [add]
     return mosaic
