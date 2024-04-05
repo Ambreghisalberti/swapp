@@ -19,7 +19,7 @@ def diagnostic_windows(df, pos, omni, conditions, **kwargs):
         subaxes = axes[:len(omni.columns)]
         fig, subaxes = plot_characteristics_windows_with_condition(omni, df, condition, figure=fig, axes=subaxes,
                                                                    **kwargs)
-        subaxes = get_pos_condition_subaxes(axes, i, nbr_slices)
+        subaxes = get_pos_condition_subaxes(axes, len(conditions)-1-i, nbr_slices)
         fig, subaxes = plot_pos_windows_with_condition(fig, subaxes, pos, df, condition, **slice_kwargs, **kwargs)
 
     plt.tight_layout()
@@ -78,7 +78,9 @@ def plot_pos_windows_with_condition(fig, ax, pos, df, condition, **kwargs):
     plot_pos_hist(subpos, fig, ax.flatten(), label=condition)
 
     msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
-    fig, ax = planet_env.layout_earth_env(msh, figure=fig, axes=ax, **kwargs)
+    print(ax)
+    print(kwargs.keys())
+    fig, ax = planet_env.layout_earth_env(msh, figure=fig, axes=ax, x_lim=(-2,15), **kwargs)
 
     for a in ax.flatten():
         a.set_title(condition)
@@ -173,10 +175,10 @@ def _make_figure_for_diagnostic(omni, conditions, **kwargs):
                                        figsize=(3 * ncols, 3 * nrows))
         axes = np.array(list(axes.values()))
 
-    for i in range(2,len(conditions)+1):
+    for i in range(1,len(conditions)):
         nbr_slices = max(np.sum([1 for arg in ['x_slice', 'y_slice', 'z_slice'] if arg in kwargs]), 1)
         for j in range(nbr_slices):
-            index = - i*nbr_slices - j -1
+            index = - i*nbr_slices - j
             axes[index].sharex(axes[-1-j])
             axes[index].sharey(axes[-1-j])
 
