@@ -66,6 +66,7 @@ def plot_pos_hist(pos, fig, ax, **kwargs):           # Transform with the slices
     ax[1] = plot_hist_2D(to_plot, 'X', 'Z', ax[1], **kwargs)
     ax[2] = plot_hist_2D(to_plot, 'Y', 'Z', ax[2], **kwargs)
     #return fig, ax
+    plt.tight_layout()
 
 
 def plot_pos_windows_with_condition(fig, ax, pos, df, condition, **kwargs):
@@ -78,14 +79,12 @@ def plot_pos_windows_with_condition(fig, ax, pos, df, condition, **kwargs):
     plot_pos_hist(subpos, fig, ax.flatten(), label=condition)
 
     msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
-    print(ax)
-    print(kwargs.keys())
-    fig, ax = planet_env.layout_earth_env(msh, figure=fig, axes=ax, x_lim=(-2,15), **kwargs)
+    fig, ax = planet_env.layout_earth_env(msh, figure=fig, axes=ax, x_lim=(-2,30), **kwargs)
 
     for a in ax.flatten():
         a.set_title(condition)
 
-    #plt.tight_layout()
+    plt.tight_layout()
     return fig, ax
 
 
@@ -146,9 +145,10 @@ def plot_characteristics_windows_with_condition(df_characteristics, df, conditio
 
     #fig, axes = _make_figure_for_features(nbr_features, **kwargs)
 
-    for ax, feature in zip(axes, to_plot.columns):
+    for i, (ax, feature) in enumerate(zip(axes, to_plot.columns)):
         ax = plot_hist_1D(to_plot, feature, ax, label=condition, **kwargs)
-        ax.legend()
+        if i==0:
+            ax.legend(loc='best')
 
     return fig, axes
 
@@ -178,7 +178,7 @@ def _make_figure_for_diagnostic(omni, conditions, **kwargs):
     for i in range(1,len(conditions)):
         nbr_slices = max(np.sum([1 for arg in ['x_slice', 'y_slice', 'z_slice'] if arg in kwargs]), 1)
         for j in range(nbr_slices):
-            index = - i*nbr_slices - j
+            index = - i*nbr_slices - j - 1
             axes[index].sharex(axes[-1-j])
             axes[index].sharey(axes[-1-j])
 

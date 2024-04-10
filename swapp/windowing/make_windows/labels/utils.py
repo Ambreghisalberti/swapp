@@ -22,7 +22,7 @@ def days_to_dates(days, df):
 
 def is_labelled(df, labelled_days):
     indices = days_to_dates(labelled_days, df)
-    df['labelled_data'] = 0
+    df['$'] = 0
 
     labelled_indices = df[df.index.isin(indices)].index.values
     if len(labelled_indices) < len(indices):
