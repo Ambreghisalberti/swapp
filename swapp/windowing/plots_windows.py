@@ -22,7 +22,7 @@ def diagnostic_windows(df, pos, omni, conditions, **kwargs):
         subaxes = get_pos_condition_subaxes(axes, len(conditions)-1-i, nbr_slices)
         fig, subaxes = plot_pos_windows_with_condition(fig, subaxes, pos, df, condition, **slice_kwargs, **kwargs)
 
-    #plt.tight_layout()
+    plt.tight_layout()
     return fig, axes
 
 
@@ -44,9 +44,14 @@ def plot_hist_1D(df, X, ax, **kwargs):
 
     bins = kwargs.pop('bins', 50)
     alpha = kwargs.pop('alpha', 0.4)
-    vmin = np.quantile(df.dropna()[X].values,0.01)
-    vmax = np.quantile(df.dropna()[X].values,0.99)
-    ax.hist(df[X].values, density=True, bins=bins, alpha=alpha, range=[vmin,vmax], **kwargs)
+    if len(df.dropna())>0:
+        vmin = np.quantile(df.dropna()[X].values,0.01)
+        vmax = np.quantile(df.dropna()[X].values,0.99)
+        density = True
+    else:
+        vmin, vmax = -1, 1
+        density = False
+    ax.hist(df[X].values, density=density, bins=bins, alpha=alpha, range=[vmin,vmax], **kwargs)
     ax.set_xlabel(X)
     ax.set_ylabel("Normalized count")
 
@@ -153,8 +158,6 @@ def plot_characteristics_windows_with_condition(df_characteristics, df, conditio
     #fig, axes = _make_figure_for_features(nbr_features, **kwargs)
 
     for i, (ax, feature) in enumerate(zip(axes, to_plot.columns)):
-        if len(condition)>10:
-            condition = condition[:10]+'\n'+condition[10:]
         ax = plot_hist_1D(to_plot, feature, ax, label=condition, **kwargs)
         ax.legend(loc='lower center', bbox_to_anchor=(0.5, 1), ncols=2)
 
@@ -180,7 +183,7 @@ def _make_figure_for_diagnostic(omni, conditions, **kwargs):
         #nrows = np.ceil(len(omni.columns) / ncols) + len(conditions)*2
         # The *2 is because the position plots are twice as high
         fig, axes = plt.subplot_mosaic(mosaic_structure(omni, len(conditions), **kwargs),
-                                       figsize=(3 * ncols, 3 * nrows))
+                                       figsize=(5 * ncols, 5 * nrows))
         axes = np.array(list(axes.values()))
 
     for i in range(1,len(conditions)):
