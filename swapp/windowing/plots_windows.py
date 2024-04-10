@@ -79,10 +79,17 @@ def plot_pos_windows_with_condition(fig, ax, pos, df, condition, **kwargs):
     plot_pos_hist(subpos, fig, ax.flatten(), label=condition)
 
     msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
-    fig, ax = planet_env.layout_earth_env(msh, figure=fig, axes=ax, x_lim=(-2,30), **kwargs)
+    fig, ax = planet_env.layout_earth_env(msh, figure=fig, axes=ax, x_lim=(-2,25), **kwargs)
 
     for a in ax.flatten():
-        a.set_title(condition)
+        if isinstance(condition, str):
+            title = condition
+        else:
+            title = ''
+            for cond in condition[:-1]:
+                title += cond+' & \n'
+            title += condition[-1]
+        a.set_title(title)
 
     plt.tight_layout()
     return fig, ax
@@ -107,7 +114,7 @@ def _make_figure_for_features(nbr_features, **kwargs):
         axes = _make_axes_array(axes)
         assert axes.size >= nbr_features, "The given axes' size must match the number of features to plot."
     else:
-        ncols = kwargs.get('ncols', 4)
+        ncols = kwargs.get('ncols', 5)
         nrows = int(np.ceil(nbr_features / ncols))
         fig, axes = plt.subplots(ncols=ncols, nrows=nrows, figsize=(5 * nrows, 5 * ncols))
 
@@ -133,7 +140,7 @@ def plot_characteristics_windows_with_condition(df_characteristics, df, conditio
         axes = _make_axes_array(axes)
         assert axes.size >= nbr_features, "The given axes' size must match the number of features to plot."
     else:
-        ncols = kwargs.get('ncols', 4)
+        ncols = kwargs.get('ncols', 5)
         nrows = int(np.ceil(nbr_features / ncols))
         fig, axes = plt.subplots(ncols=ncols, nrows=nrows, figsize=(5 * nrows, 5 * ncols))
 
@@ -147,8 +154,7 @@ def plot_characteristics_windows_with_condition(df_characteristics, df, conditio
 
     for i, (ax, feature) in enumerate(zip(axes, to_plot.columns)):
         ax = plot_hist_1D(to_plot, feature, ax, label=condition, **kwargs)
-        if i==0:
-            ax.legend(loc='best')
+        ax.legend(loc='lower center', bbox_to_anchor=(0.5, 1))
 
     return fig, axes
 
@@ -167,7 +173,7 @@ def _make_figure_for_diagnostic(omni, conditions, **kwargs):
         axes = kwargs.pop('axes')
         fig = kwargs.pop('figure')
     else:
-        ncols = kwargs.get('ncols', 4)
+        ncols = kwargs.get('ncols', 5)
         nrows = np.ceil(len(omni.columns) / ncols) + len(conditions)
         #nrows = np.ceil(len(omni.columns) / ncols) + len(conditions)*2
         # The *2 is because the position plots are twice as high
@@ -191,7 +197,7 @@ def mosaic_structure(df, nbr_conditions, **kwargs):
     #mosaic = ""
     mosaic = []
     nbr_features = len(df.columns)
-    ncols = kwargs.get('ncols', 4)
+    ncols = kwargs.get('ncols', 5)
     nrows = int(np.ceil(nbr_features/ncols))
     count = 0
     for i in range(nrows):
