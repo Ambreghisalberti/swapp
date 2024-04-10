@@ -22,7 +22,7 @@ def diagnostic_windows(df, pos, omni, conditions, **kwargs):
         subaxes = get_pos_condition_subaxes(axes, len(conditions)-1-i, nbr_slices)
         fig, subaxes = plot_pos_windows_with_condition(fig, subaxes, pos, df, condition, **slice_kwargs, **kwargs)
 
-    plt.tight_layout()
+    #plt.tight_layout()
     return fig, axes
 
 
@@ -153,6 +153,8 @@ def plot_characteristics_windows_with_condition(df_characteristics, df, conditio
     #fig, axes = _make_figure_for_features(nbr_features, **kwargs)
 
     for i, (ax, feature) in enumerate(zip(axes, to_plot.columns)):
+        if len(condition)>10:
+            condition = condition[:10]+'\n'+condition[10:]
         ax = plot_hist_1D(to_plot, feature, ax, label=condition, **kwargs)
         ax.legend(loc='lower center', bbox_to_anchor=(0.5, 1), ncols=2)
 
