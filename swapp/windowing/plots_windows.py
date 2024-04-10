@@ -154,7 +154,7 @@ def plot_characteristics_windows_with_condition(df_characteristics, df, conditio
 
     for i, (ax, feature) in enumerate(zip(axes, to_plot.columns)):
         ax = plot_hist_1D(to_plot, feature, ax, label=condition, **kwargs)
-        ax.legend(loc='lower center', bbox_to_anchor=(0.5, 1))
+        ax.legend(loc='lower center', bbox_to_anchor=(0.5, 1), ncols=2)
 
     return fig, axes
 
