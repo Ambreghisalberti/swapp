@@ -1,6 +1,9 @@
 swapp/windowing/data/MMS1_data_GSM_5S_2015_2021.pkl
 swapp/windowing/data/MMS1_pos_GSM_5S_2015_2021.pkl
 swapp/windowing/data/OMNI_data_5S_2015_2021.pkl
+swapp/windowing/data/small_prepared_data.pkl
+swapp/windowing/data/small_prepared_pos.pkl
+swapp/windowing/data/small_prepared_omni.pkl
 
 swapp/windowing/make_windows/tests.ipynb
 /swapp/.idea/

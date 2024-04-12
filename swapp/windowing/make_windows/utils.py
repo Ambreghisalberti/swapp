@@ -6,7 +6,7 @@ def nbr_windows(df, win_length):
     return len(df) // win_length
 
 
-def durationToNbrPts(time, resolution):
+def  durationToNbrPts(time, resolution):
     """
     returns the number of points in a given time interval
     """

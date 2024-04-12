@@ -30,7 +30,7 @@ def get_dates_for_position(df, y, dy, z, dz):
     subdf = spatial_slice(df, [('Y', y, y + dy), ('Z', z, z + dz)])
     days = [str(date)[:10] for date in subdf.index.values]
     days = np.unique(np.array(days))
-    return np.array(days)
+    return days
 
 
 def pick_windows_grid(df, dy, dz, **kwargs):
@@ -39,16 +39,22 @@ def pick_windows_grid(df, dy, dz, **kwargs):
     """
     Y = np.arange(-25, 25, dy)
     Z = np.arange(-25, 25, dz)
+
+    to_label = []
     for y in Y:
         for z in Z:
             days = get_dates_for_position(df, y, dy, z, dz)
             if len(days) > 0:
                 if 'windows_per_cell' in kwargs:
-                    windows_per_cell = kwargs['windows_per_cell']
-                    if windows_per_cell >= len(days):
-                        return days
-                    else:
-                        return np.random.choice(days, size=windows_per_cell)
+                    size = kwargs['windows_per_cell']
                 else:
                     proportion = kwargs.get('proportion', 0.1)
-                    return np.random.choice(days, size=int(np.ceil(proportion * len(days))))
+                    size = int(np.ceil(proportion * len(days)))
+
+                if size >= len(days):
+                    to_label += list(days)
+                else:
+                    to_label += list(np.random.choice(np.array(days), size=size))
+    return np.unique(np.array(to_label))
+
+# Could add a feature for if some windows are already labelled, not label even more in those regions!
