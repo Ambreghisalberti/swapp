@@ -111,3 +111,11 @@ def windows_to_catalogue(df, win_duration, name):
 def cut_nightside(pos, omni, all_data):
     for df in (pos, omni, all_data):
         df[pos.X.values < 0] = np.nan
+
+def make_windows(data, win_length, **kwargs):
+    if 'conditions' in kwargs:
+        conditions = kwargs['conditions']
+        data = select_windows(data, conditions)
+    starts = data.index.values[::win_length]
+    stops = data.index.values[win_length - 1::win_length]
+    return starts, stops
