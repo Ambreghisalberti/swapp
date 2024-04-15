@@ -3,7 +3,8 @@ from ..utils import flag
 def prepare_dayside(data, pos, omni, win_length):
     is_dayside(pos)
     flag_dayside(pos, win_length)
-
+    for col in ['is_dayside','isDayside']:
+        data[col] = pos[col].values
 
 def is_dayside(df):
     df.loc[:, 'is_dayside'] = df.X.values >= 0
