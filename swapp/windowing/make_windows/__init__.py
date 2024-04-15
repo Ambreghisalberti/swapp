@@ -2,6 +2,8 @@ from .labels import prepare_df_labels
 from .nodata import prepare_df_missing_data
 from .MP import intersect_MP
 from .utils import *
+from .dayside import prepare_dayside
+
 
 def prepare_df(all_data, position, omni_data, win_duration, paths, labelled_days, **kwargs):
     win_length = durationToNbrPts(win_duration, time_resolution(all_data))
@@ -10,7 +12,7 @@ def prepare_df(all_data, position, omni_data, win_duration, paths, labelled_days
     pos = position.copy()
     omni = omni_data.copy()
 
-    cut_nightside(pos, omni, data)
+    #cut_nightside(pos, omni, data)
     resize_preprocess(pos, omni, data, win_length)
 
     '''
@@ -18,6 +20,7 @@ def prepare_df(all_data, position, omni_data, win_duration, paths, labelled_days
     or make_windows (full, with missing data, overlapping MSP and MSH, etc).
     Precondition : all_data has the following features : ['Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Vz', 'Tp']
     '''
+    prepare_dayside(data, pos, omni, win_length)
     intersect_MP(data, pos, omni, win_length, 'encountersMSPandMSH')
     print('Overlap MSP/MSH done!')
     prepare_df_missing_data(data, win_length)
