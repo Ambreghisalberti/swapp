@@ -5,12 +5,15 @@ from .utils import *
 from .dayside import prepare_dayside
 
 
-def prepare_df(all_data, position, omni_data, win_duration, paths, labelled_days, **kwargs):
+def prepare_df(all_data, pos, omni, win_duration, paths, labelled_days, **kwargs):
     win_length = durationToNbrPts(win_duration, time_resolution(all_data))
 
-    data = all_data.copy()
-    pos = position.copy()
-    omni = omni_data.copy()
+    # Making a copy of the datasets is useful to keep the original dataframes,
+    # but it uses twice as much memory
+
+    #data = all_data.copy()
+    #pos = position.copy()
+    #omni = omni_data.copy()
 
     #cut_nightside(pos, omni, data)
     pos, omni, data = resize_preprocess(pos, omni, data, win_length)
