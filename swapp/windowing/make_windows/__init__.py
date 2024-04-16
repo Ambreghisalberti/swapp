@@ -13,7 +13,7 @@ def prepare_df(all_data, position, omni_data, win_duration, paths, labelled_days
     omni = omni_data.copy()
 
     #cut_nightside(pos, omni, data)
-    resize_preprocess(pos, omni, data, win_length)
+    pos, omni, data = resize_preprocess(pos, omni, data, win_length)
 
     '''
     Adds to the all_data dataframe columns of interest to characterize points (predicted regions) 

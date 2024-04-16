@@ -1,5 +1,6 @@
 import numpy as np
 from ...catalogues import create_catalogue
+from ..label_windows import intersect
 
 
 def nbr_windows(df, win_length):
@@ -26,9 +27,18 @@ def remove_last_incomplete_window(df, win_length):
 
 
 def resize_preprocess(pos, omni, all_data, win_length):
+    pos, omni = intersect(pos, omni)
+    pos, all_data = intersect(pos, all_data)
+    pos, omni = intersect(pos, omni)
+
+    assert (omni.index.values == pos.index.values).all(), "omni and pos do not have the same indices!"
+    assert (omni.index.values == all_data.index.values).all(), "omni and all_data do not have the same indices!"
+
     for df in (pos, omni, all_data):
         add_dummy_first_line(df)
         remove_last_incomplete_window(df, win_length)
+
+    return pos, omni, all_data
 
 
 def all(window):
