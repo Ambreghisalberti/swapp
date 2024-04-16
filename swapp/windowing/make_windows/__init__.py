@@ -5,8 +5,8 @@ from .utils import *
 from .dayside import prepare_dayside
 
 
-def prepare_df(all_data, pos, omni, win_duration, paths, labelled_days, **kwargs):
-    win_length = durationToNbrPts(win_duration, time_resolution(all_data))
+def prepare_df(data, pos, omni, win_duration, paths, labelled_days, **kwargs):
+    win_length = durationToNbrPts(win_duration, time_resolution(data))
 
     # Making a copy of the datasets is useful to keep the original dataframes,
     # but it uses twice as much memory
