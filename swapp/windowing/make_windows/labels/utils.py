@@ -5,7 +5,7 @@ from datetime import timedelta
 from ....catalogues import read_catalogue_events
 from ..utils import time_resolution
 
-
+'''
 def days_to_dates(days, df):
     indices = []
     for day in days:
@@ -28,6 +28,15 @@ def is_labelled(df, labelled_days):
     if len(labelled_indices) < len(indices):
         print('WARNING! Some labelled dates were not found in the data, pos, omni datasets!')
     df.loc[labelled_indices, 'labelled_data'] = np.ones(len(indices))
+'''
+
+
+def is_labelled(df, days):
+    df['labelled_data'] = 0
+    for day in days:
+        day = pd.Timestamp(str(day))
+        next_day = day + np.timedelta64(1, 'D')
+        df.loc[day:next_day, 'labelled_data'] = 1
 
 
 def flag_labelled(df, win_length):
