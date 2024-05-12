@@ -1,6 +1,6 @@
 from ..utils import flag
 import numpy as np
-from space.models import planetary as smp
+from spok.models import planetary as smp
 
 
 def regions(df):

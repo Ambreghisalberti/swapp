@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 from .make_windows.utils import select_windows
 import numpy as np
 import string
-from space.models import planetary
-from space.plot import planet_env
+from spok.models import planetary
+from spok.plot import planet_env
 
 
 def diagnostic_windows(df, pos, omni, conditions, **kwargs):
