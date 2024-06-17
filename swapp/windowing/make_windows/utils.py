@@ -89,9 +89,9 @@ def flag(df, win_length, flagger, stride=1, type=bool):
     df[flagger["name"]] = type(False)
     df.iloc[::stride, -1] = tmp
 
-    df[flagger["name"]+'_select'] = type(False)
-    for i in range(0, win_length):
-        df.iloc[i::win_length, -1] = np.logical_or(df.iloc[i::win_length, -1], tmp)
+    df[flagger["name"]+'_select'] = df[flagger["name"]].values
+    for i in range(1, win_length):
+        df.iloc[:-i, -1] = np.logical_or(df.iloc[:-i, -1], df.iloc[i:, -2])
 
     # If flagger["feature"] contains several features, I will need to add a merger here, such as tmp.any(axis=1)
     # so tmp.flagger["merger"] with flagger['merger'] = np.any(axis=1)
