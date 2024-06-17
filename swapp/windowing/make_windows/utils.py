@@ -54,7 +54,7 @@ def any(window):
     return 0 < size < len(window)
 
 
-def flag(df, win_length, flagger, type=bool):
+def original_flag(df, win_length, flagger, type=bool):
     # step=winLength is the modulo applied to the indexes before taking the
     # window on which apply is called.
     # therefore indexes of make_windows to be evaluated are : 0, winLength, 2winLength etc.
@@ -70,6 +70,29 @@ def flag(df, win_length, flagger, type=bool):
         df.iloc[i::win_length, -1] = tmp[1:]
 
     assert df.iloc[:,-1].sum() % win_length == 0, "The flag values sum is not a multiple of the size of the windows."
+    # If flagger["feature"] contains several features, I will need to add a merger here, such as tmp.any(axis=1)
+    # so tmp.flagger["merger"] with flagger['merger'] = np.any(axis=1)
+
+
+def flag(df, win_length, flagger, stride=1, type=bool):
+    # step=winLength is the modulo applied to the indexes before taking the
+    # window on which apply is called.
+    # therefore indexes of make_windows to be evaluated are : 0, winLength, 2winLength etc.
+    # window associated with index 0 is NOT COMPLETE
+    # window with index winLength is the first to be complete (== have all its points defined in the series)
+    tmp = df[flagger["features"]]
+    tmp = tmp.rolling(win_length, min_periods=0).apply(flagger["fun"]).astype(type).values
+    if len(flagger['features']) > 1:
+        tmp = flagger['merger'](tmp)
+    tmp = tmp[win_length-1::stride]  # To check
+
+    df[flagger["name"]] = type(False)
+    df.iloc[::stride, -1] = tmp
+
+    df[flagger["name"]+'_select'] = type(False)
+    for i in range(0, win_length):
+        df.iloc[i::win_length, -1] = np.logical_or(df.iloc[i::win_length, -1], tmp)
+
     # If flagger["feature"] contains several features, I will need to add a merger here, such as tmp.any(axis=1)
     # so tmp.flagger["merger"] with flagger['merger'] = np.any(axis=1)
 
@@ -92,7 +115,7 @@ def time_resolution(df):
     return df.index[1] - df.index[0]
 
 
-def select_windows(df, condition):
+def select_windows_original(df, condition):
     """ Needs to have one for all the points of the window, not only for the last one!
     Refactor flag function, and the counts of swapp."""
     if isinstance(condition, str):
@@ -103,6 +126,24 @@ def select_windows(df, condition):
     elif isinstance(condition, list):
         if condition != []:
             subdf = select_windows(df, condition[0])
+            return select_windows(subdf, condition[1:])
+        else:
+            return df
+    else:
+        raise Exception("Condition should be a string or a list of strings.")
+
+
+def select_windows(df, condition):
+    """ Needs to have one for all the points of the window, not only for the last one!
+    Refactor flag function, and the counts of swapp."""
+    if isinstance(condition, str):
+        if condition == ('all'):
+            return df
+        else:
+            return df[df[condition].values == True]
+    elif isinstance(condition, list):
+        if condition != []:
+            subdf = select_windows(df, condition[0]+'_select')
             return select_windows(subdf, condition[1:])
         else:
             return df
@@ -121,6 +162,7 @@ def windows_to_catalogue(df, win_duration, name):
 def cut_nightside(pos, omni, all_data):
     for df in (pos, omni, all_data):
         df[pos.X.values < 0] = np.nan
+
 
 def make_windows(data, win_length, **kwargs):
     if 'conditions' in kwargs:

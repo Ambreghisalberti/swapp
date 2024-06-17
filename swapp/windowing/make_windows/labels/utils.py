@@ -43,14 +43,14 @@ def is_labelled(df, days):
 
 def is_labelled(df, intervals):
     df['labelled_data'] = 0
-    for start,stop in intervals:
+    for start,stop in intervals.values:
         start = pd.Timestamp(str(start))
         stop = pd.Timestamp(str(stop))
         df.loc[start:stop, 'labelled_data'] = 1
 
 
-def flag_labelled(df, win_length):
-    flag(df, win_length, {"fun": all, "name": "isLabelled", "features": ["labelled_data"]})
+def flag_labelled(df, win_length, **kwargs):
+    flag(df, win_length, {"fun": all, "name": "isLabelled", "features": ["labelled_data"]}, **kwargs)
 
 
 def catalogue_to_label(catalogue, df):
@@ -66,9 +66,11 @@ def labels(df, paths):
     df['label'] = df.label.values * df.labelled_data.values
 
 
-def flag_contains_labelled_bl(df, win_length):
-    flag(df, win_length, {"name": "containsLabelledBL", "fun": lambda x: not (none(x)), "features": ["label"]})
+def flag_contains_labelled_bl(df, win_length, **kwargs):
+    flag(df, win_length, {"name": "containsLabelledBL", "fun": lambda x: not (none(x)), "features": ["label"]},
+         **kwargs)
 
 
-def flag_count_BL_points(df, win_length):
-    flag(df, win_length, {"name": "nbrLabelledBL", "fun": lambda x: x.sum(), "features": ["label"]}, type=int)
+def flag_count_BL_points(df, win_length, **kwargs):
+    flag(df, win_length, {"name": "nbrLabelledBL", "fun": lambda x: x.sum(), "features": ["label"]}, type=int,
+         **kwargs)

@@ -9,9 +9,9 @@ def regions(df):
     df.loc[:, 'isSW'] = (df.regions_pred.values == 2)
 
 
-def flag_msp_and_msh(df, win_length):
+def flag_msp_and_msh(df, win_length, **kwargs):
     flag(df, win_length, {"name": "encountersMSPandMSH", "fun": any, "features": ['isMSP', 'isMSH'],
-                          "merger": lambda x: np.all(x, axis=1)})
+                          "merger": lambda x: np.all(x, axis=1)}, **kwargs)
 
 
 def mp_r(df, model):
@@ -44,5 +44,5 @@ def is_around_mp(df):
                                                np.logical_not(df['below_inf_limit'].values))
 
 
-def flag_around_mp(df, win_length):
-    flag(df, win_length, {"fun": any, "name": "isCloseToMP", "features": ["is_around_mp"]})
+def flag_around_mp(df, win_length, **kwargs):
+    flag(df, win_length, {"fun": any, "name": "isCloseToMP", "features": ["is_around_mp"]}, **kwargs)

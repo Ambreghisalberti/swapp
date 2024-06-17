@@ -44,19 +44,21 @@ class TestOriginalData(unittest.TestCase):
 
 
 def generate_test_class(all_data, pos, omni, win_duration, paths, labelled_days, **kwargs):
+def generate_test_class(all_data, pos, omni, win_duration, stride, paths, labelled_days, **kwargs):
     class TestOriginalData(unittest.TestCase):
 
         @classmethod
         def setUpClass(self):
             self.resolution = time_resolution(all_data)
             self.win_length = time_resolution(win_duration, self.resolution)
+            self.nbr_windows = (len(data)-self.win_length+1)//stride
             self.data, self.pos, self.omni = prepare_df(all_data, pos, omni, win_duration, paths, labelled_days)
 
 
         @data('isFull', 'isEmpty', 'isPartial', 'encountersMSPandMSH', 'isCloseToMP',
               'isLabelled', 'containsLabelledBL')
-        def test_characteristics_multiples_of_winlength(self, column):
-            self.assertEqual(self.data[column].sum() % self.win_length, 0)
+        def test_characteristics_less_than_nbr_windows(self, column):
+            self.assertLessEqual(self.data[column].sum(), self.nbr_windows)
 
 
         def make_windows(self, condition):

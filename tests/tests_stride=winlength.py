@@ -55,7 +55,7 @@ def generate_test_class(all_data, pos, omni, win_duration, paths, labelled_days,
 
         @data('isFull', 'isEmpty', 'isPartial', 'encountersMSPandMSH', 'isCloseToMP',
               'isLabelled', 'containsLabelledBL')
-        def test_characteristics_multiples_of_winlength(self, column):
+        def test_characteristics_less_nbr_windows(self, column):
             self.assertEqual(self.data[column].sum() % self.win_length, 0)
 
 
