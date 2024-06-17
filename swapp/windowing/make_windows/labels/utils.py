@@ -30,6 +30,8 @@ def is_labelled(df, labelled_days):
     df.loc[labelled_indices, 'labelled_data'] = np.ones(len(indices))
 '''
 
+'''
+#Old version of is_labelled for 24h
 
 def is_labelled(df, days):
     df['labelled_data'] = 0
@@ -37,6 +39,14 @@ def is_labelled(df, days):
         day = pd.Timestamp(str(day))
         next_day = day + np.timedelta64(1, 'D')
         df.loc[day:next_day, 'labelled_data'] = 1
+'''
+
+def is_labelled(df, intervals):
+    df['labelled_data'] = 0
+    for start,stop in intervals:
+        start = pd.Timestamp(str(start))
+        stop = pd.Timestamp(str(stop))
+        df.loc[start:stop, 'labelled_data'] = 1
 
 
 def flag_labelled(df, win_length):
