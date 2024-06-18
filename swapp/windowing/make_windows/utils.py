@@ -149,7 +149,7 @@ def select_windows(df, condition):
             return df[df[condition].values == True]
     elif isinstance(condition, list):
         if condition != []:
-            subdf = select_windows(df, condition[0]+'_select')
+            subdf = select_windows(df, condition[0])
             return select_windows(subdf, condition[1:])
         else:
             return df
