@@ -1,4 +1,4 @@
-from ..utils import flag, none
+from ..utils import flag, flag_select, none
 import numpy as np
 import pandas as pd
 from datetime import timedelta
@@ -50,7 +50,10 @@ def is_labelled(df, intervals):
 
 
 def flag_labelled(df, win_length, **kwargs):
-    flag(df, win_length, {"fun": all, "name": "isLabelled", "features": ["labelled_data"]}, **kwargs)
+    flagger = {"fun": all, "name": "isLabelled", "features": ["labelled_data"]}
+    flag(df, win_length, flagger, **kwargs)
+    flag_select(df, win_length, flagger)
+    flag_select(df, win_length, flagger)
 
 
 def catalogue_to_label(catalogue, df):
@@ -67,8 +70,9 @@ def labels(df, paths):
 
 
 def flag_contains_labelled_bl(df, win_length, **kwargs):
-    flag(df, win_length, {"name": "containsLabelledBL", "fun": lambda x: not (none(x)), "features": ["label"]},
-         **kwargs)
+    flagger = {"name": "containsLabelledBL", "fun": lambda x: not (none(x)), "features": ["label"]}
+    flag(df, win_length, flagger, **kwargs)
+    flag_select(df, win_length, flagger)
 
 
 def flag_count_BL_points(df, win_length, **kwargs):

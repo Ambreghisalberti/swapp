@@ -43,7 +43,6 @@ class TestOriginalData(unittest.TestCase):
         self.assertLessEqual(len(df.dropna()), len(pos.dropna()))
 
 
-def generate_test_class(all_data, pos, omni, win_duration, paths, labelled_days, **kwargs):
 def generate_test_class(all_data, pos, omni, win_duration, stride, paths, labelled_days, **kwargs):
     class TestOriginalData(unittest.TestCase):
 
@@ -51,22 +50,20 @@ def generate_test_class(all_data, pos, omni, win_duration, stride, paths, labell
         def setUpClass(self):
             self.resolution = time_resolution(all_data)
             self.win_length = time_resolution(win_duration, self.resolution)
-            self.nbr_windows = (len(data)-self.win_length+1)//stride
-            self.data, self.pos, self.omni = prepare_df(all_data, pos, omni, win_duration, paths, labelled_days)
-
+            self.nbr_windows = nbr_windows(all_data, self.win_length, stride)
+            self.data, self.pos, self.omni = prepare_df(all_data, pos, omni, win_duration, paths, labelled_days,
+                                                        stride=stride)
 
         @data('isFull', 'isEmpty', 'isPartial', 'encountersMSPandMSH', 'isCloseToMP',
               'isLabelled', 'containsLabelledBL')
         def test_characteristics_less_than_nbr_windows(self, column):
             self.assertLessEqual(self.data[column].sum(), self.nbr_windows)
 
-
         def make_windows(self, condition):
-            windows = select_windows(self.data, condition)
-            starts = windows.index.values[::self.win_length]
-            stops = windows.index.values[self.win_length - 1::self.win_length]
+            windows = select_windows(self.data, condition+'select')
+            starts = windows.index.values[::stride]
+            stops = windows.index.values[self.win_length - 1::stride]
             return starts, stops
-
 
         @data('isFull', 'isEmpty', 'isPartial', 'encountersMSPandMSH', 'isCloseToMP',
               'isLabelled', 'containsLabelledBL')
@@ -74,7 +71,6 @@ def generate_test_class(all_data, pos, omni, win_duration, stride, paths, labell
             starts, stops = self.make_windows(column)
             self.assertEqual(len(starts), len(stops))
             self.assertEqual((stops-starts != win_duration - self.resolution).sum(), 0)
-
 
         @data('isFull', 'isEmpty', 'isPartial', 'encountersMSPandMSH', 'isCloseToMP',
               'isLabelled', 'containsLabelledBL')
@@ -84,16 +80,14 @@ def generate_test_class(all_data, pos, omni, win_duration, stride, paths, labell
                 win = self.data[start : stop]
                 self.assertEqual(len(win), self.win_length)
 
-
         @data('isFull', 'isEmpty', 'isPartial', 'encountersMSPandMSH', 'isCloseToMP',
               'isLabelled', 'containsLabelledBL')
         def test_windows_have_same_characteristics(self, column):
             starts, stops = self.make_windows(column)
             for t in range(len(starts)):
-                win = get_window_features(self.data, t, win_duration).values
+                win = get_window_features(self.data, t, win_duration, column+'_select').values
                 values = np.unique(win)
-                self.assertEqual(len(values), 0)
-
+                self.assertEqual(len(values), 1)
 
         def check_number_present_data(self, starts, size):
             for t in range(len(starts)):
@@ -117,31 +111,27 @@ def generate_test_class(all_data, pos, omni, win_duration, stride, paths, labell
                 self.assertLess(len(win.dropna()), self.win_length)
                 self.assertGreaterEqual(len(win.dropna()), 0)
 
-
         def test_complementarity_full_empty_partial(self):
             self.assertEqual(self.data.isFull.sum() + self.data.isEmpty.sum() + self.data.isPartial.sum(),
-                             len(self.data))
+                             self.nbr_windows)
             self.assertEqual((self.data.isEmpty.values.astype(int) + self.data.isFull.values.astype(int)
                  + self.data.isPartial.values.astype(int) > 1).sum(),0)
-
 
         def test_regions_are_complementary(self):
             nbr_regions = (self.data.isMSP.values.astype(int) + self.data.isMSH.values.astype(int)
                            + self.data.isSW.values.astype(int))
             self.assertEqual((nbr_regions != 1).sum(), 0)
 
-
         def test_encountering_MSP_and_MSH(self):
-            windows = select_windows(self.data, 'encountersMSPandMSH')
-            nbr_regions = windows.isMSP.values.astype(int) + windows.isMSH.values.astype(int)
-            self.assertEqual((nbr_regions != 1).sum(), 0)
-            self.assertGreater(windows.isMSP.sum(), 0)
-            self.assertGreater(windows.isMSH.sum(), 0)
-
+            starts, _ = self.make_windows('encountersMSPandMSH')
+            for t in range(len(starts)):
+                win = get_window_features(self.data, t, win_duration, ['isMSP','isMSH'])
+                self.assertGreater(win.isMSP.sum(), 0)
+                self.assertGreater(win.isMSH.sum(), 0)
 
         def test_BL_points_are_labelled(self):
             windows = select_windows(self.data, 'label')
-            self.assertEqual(windows.isLabelled.sum(), len(windows))
+            self.assertEqual(windows.labelled_data.sum(), len(windows))
 
         def test_windows_with_BL_points_contain_BL(self):
             contains_BL = self.data[self.data.nbrLabelledBL.values > 0]
@@ -173,7 +163,6 @@ def generate_test_class(all_data, pos, omni, win_duration, stride, paths, labell
                 print(f'test_msp_msh_windows_have_little_sw failed {nb_fails} times.')
                 # Plot TODO
 
-
         @data(position)
         def test_BL_points_are_close_to_MP(self, pos):
             time_indices = all_data[all_data.label.values.astype(bool)].index.values
@@ -191,9 +180,8 @@ def generate_test_class(all_data, pos, omni, win_duration, stride, paths, labell
                 print(f'test_bl_points_are_close_to_MP failed {nb_fails} times.')
                 # Plot TODO
 
-
-
     return TestOriginalData
+
 
 module_obj = sys.modules[__name__]
 

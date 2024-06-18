@@ -1,4 +1,4 @@
-from ..utils import flag, none, all, any
+from ..utils import flag, flag_select, none, all, any
 
 
 def is_missing(df):
@@ -6,12 +6,18 @@ def is_missing(df):
 
 
 def flag_empty(df, win_length, **kwargs):
-    flag(df, win_length, {"name": "isEmpty", "fun": all, "features": ["missing_data"]}, **kwargs)
+    flagger = {"name": "isEmpty", "fun": all, "features": ["missing_data"]}
+    flag(df, win_length, flagger, **kwargs)
+    flag_select(df, win_length, flagger)
 
 
 def flag_full(df, win_length, **kwargs):
-    flag(df, win_length, {"name": "isFull", "fun": none, "features": ["missing_data"]}, **kwargs)
+    flagger = {"name": "isFull", "fun": none, "features": ["missing_data"]}
+    flag(df, win_length, flagger, **kwargs)
+    flag_select(df, win_length, flagger)
 
 
 def flag_partial(df, win_length, **kwargs):
-    flag(df, win_length, {"name": "isPartial", "fun": any, "features": ["missing_data"]}, **kwargs)
+    flagger = {"name": "isPartial", "fun": any, "features": ["missing_data"]}
+    flag(df, win_length, flagger, **kwargs)
+    flag_select(df, win_length, flagger)

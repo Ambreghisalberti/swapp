@@ -1,4 +1,5 @@
-from ..utils import flag
+from ..utils import flag, flag_select
+
 
 def prepare_dayside(data, pos, omni, win_length, **kwargs):
     is_dayside(pos)
@@ -6,9 +7,11 @@ def prepare_dayside(data, pos, omni, win_length, **kwargs):
     for col in ['is_dayside','isDayside']:
         data[col] = pos[col].values
 
+
 def is_dayside(df):
     df.loc[:, 'is_dayside'] = df.X.values >= 0
 
 
 def flag_dayside(df, win_length,  **kwargs):
     flag(df, win_length, {"fun": all, "name": "isDayside", "features": ["is_dayside"]},  **kwargs)
+    flag_select(df, win_length, {"fun": all, "name": "isDayside", "features": ["is_dayside"]})

@@ -1,4 +1,4 @@
-from ..utils import flag
+from ..utils import flag, flag_select
 import numpy as np
 from spok.models import planetary as smp
 
@@ -10,8 +10,10 @@ def regions(df):
 
 
 def flag_msp_and_msh(df, win_length, **kwargs):
-    flag(df, win_length, {"name": "encountersMSPandMSH", "fun": any, "features": ['isMSP', 'isMSH'],
-                          "merger": lambda x: np.all(x, axis=1)}, **kwargs)
+    flagger = {"name": "encountersMSPandMSH", "fun": any, "features": ['isMSP', 'isMSH'],
+               "merger": lambda x: np.all(x, axis=1)}
+    flag(df, win_length, flagger, **kwargs)
+    flag_select(df, win_length, flagger)
 
 
 def mp_r(df, model):
@@ -45,4 +47,6 @@ def is_around_mp(df):
 
 
 def flag_around_mp(df, win_length, **kwargs):
-    flag(df, win_length, {"fun": any, "name": "isCloseToMP", "features": ["is_around_mp"]}, **kwargs)
+    flagger = {"fun": any, "name": "isCloseToMP", "features": ["is_around_mp"]}
+    flag(df, win_length, flagger, **kwargs)
+    flag_select(df, win_length, flagger)

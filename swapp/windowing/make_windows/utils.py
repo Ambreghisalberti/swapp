@@ -3,11 +3,11 @@ from ...catalogues import create_catalogue
 from ..label_windows import intersect
 
 
-def nbr_windows(df, win_length):
-    return len(df) // win_length
+def nbr_windows(df, win_length, stride):
+    #return len(df) // win_length
+    return (len(df)-win_length+1)//stride
 
-
-def  durationToNbrPts(time, resolution):
+def durationToNbrPts(time, resolution):
     """
     returns the number of points in a given time interval
     """
@@ -81,20 +81,21 @@ def flag(df, win_length, flagger, stride=1, type=bool):
     # window associated with index 0 is NOT COMPLETE
     # window with index winLength is the first to be complete (== have all its points defined in the series)
     tmp = df[flagger["features"]]
-    tmp = tmp.rolling(win_length, min_periods=0).apply(flagger["fun"]).astype(type).values
+    tmp = tmp.rolling(win_length, min_periods=0, step=stride).apply(flagger["fun"]).astype(type).values
+
     if len(flagger['features']) > 1:
         tmp = flagger['merger'](tmp)
-    tmp = tmp[win_length-1::stride]  # To check
 
     df[flagger["name"]] = type(False)
     df.iloc[::stride, -1] = tmp
+    df.iloc[:win_length, -1] = False
 
-    df[flagger["name"]+'_select'] = df[flagger["name"]].values
+
+def flag_select(df, win_length, flagger):
+    ''' Only works for flagger function giving a boolean'''
+    df[flagger["name"] + '_select'] = df[flagger["name"]].values
     for i in range(1, win_length):
-        df.iloc[:-i, -1] = np.logical_or(df.iloc[:-i, -1], df.iloc[i:, -2])
-
-    # If flagger["feature"] contains several features, I will need to add a merger here, such as tmp.any(axis=1)
-    # so tmp.flagger["merger"] with flagger['merger'] = np.any(axis=1)
+        df.iloc[:-i, -1] = np.logical_or(df.iloc[:-i, -1].values, df.iloc[i:, -2].values)
 
 
 def get_window(df, t_start, win_duration):
@@ -164,10 +165,15 @@ def cut_nightside(pos, omni, all_data):
         df[pos.X.values < 0] = np.nan
 
 
-def make_windows(data, win_length, **kwargs):
+# Aller mettre win_duration à la place de win_length où il faut!!
+def make_windows(data, win_duration, **kwargs):
     if 'conditions' in kwargs:
         conditions = kwargs['conditions']
-        data = select_windows(data, conditions)
-    starts = data.index.values[::win_length]
-    stops = data.index.values[win_length - 1::win_length]
+        stops = data[data['conditions'] == 1].index.values
+    else:
+        win_length = kwargs['win_length']
+        stride = kwargs['stride']
+        stops = data.index.values[win_length-1::stride]
+    resolution = time_resolution(data)
+    starts = stops - win_duration + resolution
     return starts, stops
