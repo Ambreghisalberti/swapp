@@ -16,6 +16,7 @@ def prepare_df_original(data, pos, omni, win_duration, paths, labelled_days, **k
     #omni = omni_data.copy()
 
     #cut_nightside(pos, omni, data)
+    pos, omni, data = df_with_shared_index(pos, omni, data)
     pos, omni, data = resize_preprocess(pos, omni, data, win_length)
 
     '''
@@ -41,6 +42,7 @@ def prepare_df_original(data, pos, omni, win_duration, paths, labelled_days, **k
 
 def prepare_df(data, pos, omni, win_duration, paths, labelled_days, **kwargs):
     win_length = durationToNbrPts(win_duration, time_resolution(data))
+    pos, omni, data = df_with_shared_index(pos, omni, data)
 
     #pos, omni, data = resize_preprocess(pos, omni, data, win_length)
 

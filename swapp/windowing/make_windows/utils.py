@@ -26,13 +26,18 @@ def remove_last_incomplete_window(df, win_length):
         df.drop(labels=df.iloc[-additional_points:].index.values, inplace=True)
 
 
-def resize_preprocess(pos, omni, all_data, win_length):
+def df_with_shared_index(pos, omni, all_data):
     pos, omni = intersect(pos, omni)
     pos, all_data = intersect(pos, all_data)
     pos, omni = intersect(pos, omni)
 
     assert (omni.index.values == pos.index.values).all(), "omni and pos do not have the same indices!"
     assert (omni.index.values == all_data.index.values).all(), "omni and all_data do not have the same indices!"
+
+    return pos, omni, all_data
+
+
+def resize_preprocess(pos, omni, all_data, win_length):
 
     for df in (pos, omni, all_data):
         add_dummy_first_line(df)
