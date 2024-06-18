@@ -8,7 +8,7 @@ def prepare_df_labels(df, win_length, label_catalogues_dict, intervals, **kwargs
     is_labelled(df, intervals)
     flag_labelled(df, win_length, **kwargs)
 
-    for category in label_catalogues_dict.keys:
+    for category in label_catalogues_dict.keys():
         paths = label_catalogues_dict[category]
         labels(df, paths, category)
 
