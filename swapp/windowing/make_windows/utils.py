@@ -98,9 +98,13 @@ def flag(df, win_length, flagger, stride=1, type=bool):
 
 def flag_select(df, win_length, flagger):
     ''' Only works for flagger function giving a boolean'''
-    df[flagger["name"] + '_select'] = df[flagger["name"]].values
+
+    '''df[flagger["name"] + '_select'] = df[flagger["name"]].values
+
     for i in range(1, win_length):
         df.iloc[:-i, -1] = np.logical_or(df.iloc[:-i, -1].values, df.iloc[i:, -2].values)
+    '''
+    df[flagger["name"] + '_select'] = df[flagger["name"]][::-1].rolling(win_length, min_periods=0).apply(any).astype(bool).values[::-1]
 
 
 def get_window(df, t_start, win_duration):
