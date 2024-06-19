@@ -129,6 +129,9 @@ def prepare_df_windowing(data, pos, omni, win_duration, **kwargs):
 def prepare_df_new_labels(data, pos, omni, win_duration, label_catalogues_dict, intervals, **kwargs):
     ''' Precondition : takes as input data, pos and omni dataframes which already went through the
     prepare_df_pre_windowing_without_labels function, but this step should yield the same results everytime.'''
+    t1 = time.time()
     data = prepare_df_labels_pre_windowing(data, label_catalogues_dict, intervals)
+    t2 = time.time()
+    print(f'Labels prepared in {t2 - t1} seconds.')
     data, pos, omni = prepare_df_windowing(data, pos, omni, win_duration, **kwargs)
     return data, pos, omni
