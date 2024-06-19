@@ -16,6 +16,7 @@ def prepare_df_labels_pre_windowing(df, label_catalogues_dict, intervals):
     for category in label_catalogues_dict.keys():
         paths = label_catalogues_dict[category]
         labels(df, paths, category)
+        print(f"Labels of {category} done.")
     return df
 
 def prepare_df_labels_windowing(df, win_length, **kwargs):

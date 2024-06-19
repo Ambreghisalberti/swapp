@@ -65,6 +65,7 @@ def labels(df, paths, name):
     for path in paths:
         catalogue = read_catalogue_events(path)
         catalogue_to_label(catalogue, df, name)
+        print(f'Path {path} done.')
     df['label_'+name] = df['label_'+name].values * df.labelled_data.values
 
 
