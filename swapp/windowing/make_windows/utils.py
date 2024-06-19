@@ -92,8 +92,8 @@ def flag(df, win_length, flagger, stride=1, type=bool):
         tmp = flagger['merger'](tmp)
 
     df[flagger["name"]] = type(False)
-    df.iloc[::stride, -1] = tmp
-    df.iloc[:win_length, -1] = False
+    df.iloc[::stride, -1] = tmp.astype(type)
+    df.iloc[:win_length, -1] = type(False)
 
 
 def flag_select(df, win_length, flagger):

@@ -2,14 +2,19 @@ from ..utils import flag, flag_select
 
 
 def prepare_dayside(data, pos, omni, win_length, **kwargs):
-    is_dayside(pos)
-    flag_dayside(pos, win_length, **kwargs)
-    for col in ['is_dayside','isDayside']:
-        data[col] = pos[col].values
+    prepare_dayside_pre_windowing(pos)
+    data = prepare_dayside_windowing(data, pos, win_length, **kwargs)
+    return data
 
-
-def is_dayside(df):
+def prepare_dayside_pre_windowing(df):
     df.loc[:, 'is_dayside'] = df.X.values >= 0
+
+
+def prepare_dayside_windowing(data, pos, win_length, **kwargs):
+    flag_dayside(pos, win_length, **kwargs)
+    for col in ['is_dayside', 'isDayside', 'isDayside_select']:
+        data[col] = pos[col].values
+    return data
 
 
 def flag_dayside(df, win_length,  **kwargs):

@@ -14,7 +14,7 @@ def flag_msp_and_msh(df, win_length, **kwargs):
                "merger": lambda x: np.all(x, axis=1)}
     flag(df, win_length, flagger, **kwargs)
     flag_select(df, win_length, flagger)
-
+    return df
 
 def mp_r(df, model):
     """

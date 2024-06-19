@@ -20,18 +20,35 @@ def prepare_df_MSP_MSH_overlap(df, win_length, **kwargs):
     """
     These are the features of the gradient boosting. This allows to run this function even after columns were added.
     """
+    df = prepare_df_MSP_MSH_overlap_pre_windowing(df)
+    df = prepare_df_MSP_MSH_overlap_windowing(df, win_length, **kwargs)
+    return df
+
+
+def prepare_df_MSP_MSH_overlap_pre_windowing(df):
     data = df[['Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Vz', 'Tp']]
     pred_boosting(data)
     regions(data)
-    flag_msp_and_msh(data, win_length, **kwargs)
-    for feature in ['regions_pred', 'isMSP', 'isMSH', 'isSW', 'encountersMSPandMSH']:
+    '''
+      We add the results to the initial dataframe to keep the initial columns.
+      '''
+    for feature in ['regions_pred', 'isMSP', 'isMSH', 'isSW']:
         df[feature] = data[feature].values
-    '''
-    We add the results to the initial dataframe to keep the initial columns.
-    '''
+    return df
+
+
+def prepare_df_MSP_MSH_overlap_windowing(df, win_length, **kwargs):
+    df = flag_msp_and_msh(df, win_length, **kwargs)
+    return df
 
 
 def prepare_df_close_to_MP(pos, omni, win_length, **kwargs):
+    pos = prepare_df_close_to_MP_pre_windowing(pos, omni, **kwargs)
+    pos = prepare_df_close_to_MP_windowing(pos, omni, win_length, **kwargs)
+    return pos
+
+
+def prepare_df_close_to_MP_pre_windowing(pos, omni, **kwargs):
     dl_inf = kwargs.get('dl_inf', 3)
     dl_sup = kwargs.get('dl_sup', 3)
 
@@ -40,7 +57,16 @@ def prepare_df_close_to_MP(pos, omni, win_length, **kwargs):
     beyond_sup_limit(pos_omni, dl_sup)
     below_inf_limit(pos_omni, dl_inf)
     is_around_mp(pos_omni)
+
+    for feature in ['r_mp', 'beyond_sup_limit', 'below_inf_limit', 'is_around_mp']:
+        pos[feature] = pos_omni[feature].values
+    return pos
+
+
+def prepare_df_close_to_MP_windowing(pos, omni, win_length, **kwargs):
+    pos_omni = pd.concat([pos, omni], axis=1)
     flag_around_mp(pos_omni, win_length, **kwargs)
 
-    for feature in ['r_mp', 'isCloseToMP']:
+    for feature in ['isCloseToMP', 'isCloseToMP_select']:
         pos[feature] = pos_omni[feature].values
+    return pos
