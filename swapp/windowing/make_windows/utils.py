@@ -95,8 +95,33 @@ def flag(df, win_length, flagger, stride=1, type=bool):
     df.iloc[::stride, -1] = tmp.astype(type)
     df.iloc[:win_length, -1] = type(False)
 
+def flag_for_test(df, win_length, flagger, stride=1, type=bool):
+    # step=winLength is the modulo applied to the indexes before taking the
+    # window on which apply is called.
+    # therefore indexes of make_windows to be evaluated are : 0, winLength, 2winLength etc.
+    # window associated with index 0 is NOT COMPLETE
+    # window with index winLength is the first to be complete (== have all its points defined in the series)
+    tmp = df[flagger["features"]]
+    count = tmp.rolling(win_length, min_periods=0, step=stride).sum()
 
-def flag_select(df, win_length, flagger):
+    if (flagger["fun"]).__name__== 'all':
+        tmp = (count == win_length).values
+    elif (flagger["fun"]).__name__== 'none':
+        tmp = (count == 0).values
+    elif (flagger["fun"]).__name__== 'any':
+        tmp = np.logical_and((count < win_length).values, (count > 0).values)
+    else:
+        raise Exception("This function has been coded to be called with flagger['fun'] = any, all or none")
+
+    if len(flagger['features']) > 1:
+        tmp = flagger['merger'](tmp)
+
+    df[flagger["name"]] = type(False)
+    df.iloc[::stride, -1] = tmp.astype(type)
+    df.iloc[:win_length, -1] = type(False)
+
+
+def flag_select(df, win_length, flagger, type=bool):
     ''' Only works for flagger function giving a boolean'''
 
     '''df[flagger["name"] + '_select'] = df[flagger["name"]].values
@@ -104,7 +129,8 @@ def flag_select(df, win_length, flagger):
     for i in range(1, win_length):
         df.iloc[:-i, -1] = np.logical_or(df.iloc[:-i, -1].values, df.iloc[i:, -2].values)
     '''
-    df[flagger["name"] + '_select'] = df[flagger["name"]][::-1].rolling(win_length, min_periods=0).apply(any).astype(bool).values[::-1]
+    df[flagger["name"] + '_select'] = df[flagger["name"]][::-1].rolling(win_length, min_periods=0).apply(
+        lambda x:not(none(x))).astype(bool).values[::-1]
 
 
 def get_window(df, t_start, win_duration):
