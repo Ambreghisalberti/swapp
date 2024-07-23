@@ -107,8 +107,8 @@ def duplicate_catalogue(path_catalogue: str):
         events = []
 
         for ev in data['events']:
-            events += [tscat.create_event(start=datetime.strptime(ev['start'], '%Y-%m-%d %H:%M:%S.%f'),
-                                          stop=datetime.strptime(ev['stop'], '%Y-%m-%d %H:%M:%S.%f'),
+            events += [tscat.create_event(start=datetime.strptime(ev['start'], '%Y-%m-%dT%H:%M:%S.%f'),
+                                          stop=datetime.strptime(ev['stop'], '%Y-%m-%dT%H:%M:%S.%f'),
                                           author=ev['author'], tags=ev['tags'], products=ev['products'])]
         tscat.add_events_to_catalogue(duplicate, events)
 
