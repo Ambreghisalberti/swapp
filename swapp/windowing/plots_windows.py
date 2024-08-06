@@ -150,7 +150,7 @@ def plot_characteristics_windows_with_condition(df_characteristics, df, conditio
         fig, axes = plt.subplots(ncols=ncols, nrows=nrows, figsize=(5 * nrows, 5 * ncols))
 
     assert isinstance(axes, np.ndarray), "The created axes must be an array."
-    assert axes.size == nbr_features, ("The array of Axes given as input must have the same length as the "
+    assert axes.size >= nbr_features, ("The array of Axes given as input must have the same length as the "
                                        "number of features.")
     axes = axes.flatten()[:nbr_features]
     ##########################################################################
