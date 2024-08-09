@@ -92,8 +92,8 @@ def flag(df, win_length, flagger, stride=1, type=bool):
         tmp = flagger['merger'](tmp)
 
     df[flagger["name"]] = type(False)
-    df.iloc[::stride, -1] = tmp.astype(type)
-    df.iloc[:win_length, -1] = type(False)
+    df.loc[df.iloc[::stride].index.values, flagger["name"]] = tmp.astype(type)
+    df.loc[df.iloc[:win_length].index.values, flagger["name"]] = type(False)
 
 def flag_for_test(df, win_length, flagger, stride=1, type=bool):
     # step=winLength is the modulo applied to the indexes before taking the
