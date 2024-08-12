@@ -46,7 +46,7 @@ def dates_to_datetime(date, **kwargs):
     if isinstance(date, datetime):
         return date
     elif isinstance(date, str):
-        format = kwargs.get('format', '%Y-%m-%d %H:%M:%S.%f')
+        format = kwargs.get('format', '%Y-%m-%dT%H:%M:%S.%f')
         return datetime.strptime(date, format)
     elif isinstance(date, np.datetime64):
         return dates_to_datetime(str(date)[:22],format='%Y-%m-%dT%H:%M:%S.%f')
@@ -78,7 +78,7 @@ def export_catalogue(catalogue, name, path='/home/ghisalberti/catalogues/'):
         outfile.write(jc)
 
 
-def merge_catalogues(catalogues):
+def merge_catalogues(catalogues, **kwargs):
     """ catalogues must be a list of catalogues.
     The user can specify a new name and author, but by default the name and author
     of the first catalogue will be used for the merged one."""
@@ -88,8 +88,8 @@ def merge_catalogues(catalogues):
 
     for catalogue in catalogues:
         for ev in catalogue['events']:
-            start = dates_to_datetime(ev['start'])
-            stop = dates_to_datetime(ev['stop'])
+            start = dates_to_datetime(ev['start'], **kwargs)
+            stop = dates_to_datetime(ev['stop'], **kwargs)
             events += [tscat.create_event(start=start, stop=stop, author=author)]
 
     tscat.add_events_to_catalogue(merged_catalogue, events)
