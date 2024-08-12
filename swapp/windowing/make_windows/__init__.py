@@ -91,6 +91,7 @@ def prepare_df_pre_windowing(data, pos, omni, label_catalogues_dict, intervals, 
 
 
 def prepare_df_windowing(data, pos, omni, win_duration, **kwargs):
+    pos, omni, data = df_with_shared_index(pos, omni, data)
     win_length = durationToNbrPts(win_duration, time_resolution(data))
 
     '''
