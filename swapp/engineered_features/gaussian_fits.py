@@ -427,11 +427,26 @@ def fit_sum_populations_by_energy_range(x, y, verbose=False):
         print(f'Err1 = {err1}')
     if err1 < 0.15:  # Fit with one gaussian is good enough ?
         if verbose:
-            print('One population because fits well enough')
+            print('One population because fits well enough.')
+        if center_main < 80:
+            max_main, center_main, std_main = 0, -1, -1
+            if verbose:
+                print('...but in the cold ions range.')
         max_secondary, center_secondary, std_secondary = 0, -1, -1
     else:
         max_main2, center_main2, std_main2, max_secondary, center_secondary, std_secondary, err2 = fit_populations(x, y,
                                             80, np.max(x), 2, verbose=verbose, fig=fig, ax=ax[2])
+
+        if center_secondary < 80:
+            max_secondary, center_secondary, std_secondary = 0, -1, -1
+            if verbose:
+                print('Secondary population is in the cold ions range.')
+        if center_main2 < 80:
+            max_main2, center_main2, std_main2 = max_secondary, center_secondary, std_secondary
+            max_secondary, center_secondary, std_secondary = 0, -1, -1
+            if verbose:
+                print('Main population is in the cold ions range.')
+
         if verbose:
             print(f'Err2 = {err2}')
         if err2 > err1 * 0.6:  # Fit with 2 gaussians is not that much better than with one
