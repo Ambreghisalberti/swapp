@@ -453,10 +453,12 @@ def fit_sum_populations_by_energy_range(x, y, verbose=False):
             if verbose:
                 print('One population, because fit with two gaussians does not lower the error that much.')
             max_secondary, center_secondary, std_secondary = 0, -1, -1
-        elif max(center_main, center_secondary) / min(center_main, center_secondary) < 2:
+        elif (center_main > 0) & (center_secondary > 0) & (abs(np.log10(center_main)-np.log10(center_secondary)) < 0.5):
+        # elif max(center_main, center_secondary) / min(center_main, center_secondary) < 2:
             # The two populations are very close in mean energy
             if verbose:
-                print(f'One population because center_main = {center_main} and center_secondary = {center_secondary}')
+                print(f'One population because center_main = {center_main} and center_secondary = {center_secondary} are '
+                      f'too close.')
             max_secondary, center_secondary, std_secondary = 0, -1, -1
             max_main, center_main, std_main = max_main2, center_main2, std_main2
         else:
