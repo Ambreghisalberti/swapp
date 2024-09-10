@@ -152,40 +152,29 @@ def fit_two_gaussians(x, y, verbose=False):
     err1 = compute_relative_error(x, y, popt1, g)
     if verbose:
         print(f'Err1 = {err1}')
-        fig, ax = plt.subplots(ncols=3, figsize=(15, 5))
+        fig, ax = plt.subplots(ncols=4, figsize=(16, 4))
         plot_two_gaussians(x, y, popt1, fig=fig, ax=ax[0])
     else:
         fig, ax = 0, [0, 0, 0, 0]
 
-    if err1 < 0.2:
-        return popt1
-    else:
-        popt2 = fit_two_gaussians_guess(x, y, guess2)
-        err2 = compute_relative_error(x, y, popt2, g)
-        if verbose:
-            print(f'Err2 = {err2}')
-            plot_two_gaussians(x, y, popt2, fig=fig, ax=ax[1])
+    popt2 = fit_two_gaussians_guess(x, y, guess2)
+    err2 = compute_relative_error(x, y, popt2, g)
+    if verbose:
+        print(f'Err2 = {err2}')
+        plot_two_gaussians(x, y, popt2, fig=fig, ax=ax[1])
 
-        if err2 < 0.2:
-            return popt2
-        else:
-            popt3 = fit_two_gaussians_guess(x, y, guess3)
-            err3 = compute_relative_error(x, y, popt3, g)
-            if verbose:
-                print(f'Err3 = {err3}')
-                plot_two_gaussians(x, y, popt3, fig=fig, ax=ax[2])
-            if err3 < 0.2:
-                return popt3
-            else:
-                popt4 = fit_two_gaussians_guess(x, y, guess4)
-                err4 = compute_relative_error(x, y, popt4, g)
-                if verbose:
-                    print(f'Err4 = {err4}')
-                    plot_two_gaussians(x, y, popt4, fig=fig, ax=ax[1])
+    popt3 = fit_two_gaussians_guess(x, y, guess3)
+    err3 = compute_relative_error(x, y, popt3, g)
+    if verbose:
+        print(f'Err3 = {err3}')
+        plot_two_gaussians(x, y, popt3, fig=fig, ax=ax[2])
 
-                if err4 < 0.2:
-                    return popt4
-            
+    popt4 = fit_two_gaussians_guess(x, y, guess4)
+    err4 = compute_relative_error(x, y, popt4, g)
+    if verbose:
+        print(f'Err4 = {err4}')
+        plot_two_gaussians(x, y, popt4, fig=fig, ax=ax[3])
+
     if (err1 < err2) & (err1 < err3) & (err1 < err4):
         return popt1
     elif (err2 < err3) & (err2 < err4):
