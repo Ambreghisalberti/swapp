@@ -146,6 +146,7 @@ def fit_two_gaussians(x, y, verbose=False):
     guess1 = [2 * 10 ** 2, -25, 100, 7, -220, 2000]
     guess2 = [5 * 10 ** 2, -25, 100, 7, -220, 2000]
     guess3 = [10 ** 2, -25, 100, 7, -220, 2000]
+    guess4 = [4 * 10 ** 2, -25, 100, 250, -100, 2000]
 
     popt1 = fit_two_gaussians_guess(x, y, guess1)
     err1 = compute_relative_error(x, y, popt1, g)
@@ -175,13 +176,24 @@ def fit_two_gaussians(x, y, verbose=False):
                 plot_two_gaussians(x, y, popt3, fig=fig, ax=ax[2])
             if err3 < 0.2:
                 return popt3
+            else:
+                popt4 = fit_two_gaussians_guess(x, y, guess4)
+                err4 = compute_relative_error(x, y, popt4, g)
+                if verbose:
+                    print(f'Err4 = {err4}')
+                    plot_two_gaussians(x, y, popt4, fig=fig, ax=ax[1])
 
-    if (err1 < err2) & (err1 < err3):
+                if err4 < 0.2:
+                    return popt4
+            
+    if (err1 < err2) & (err1 < err3) & (err1 < err4):
         return popt1
-    elif err2 < err3:
+    elif (err2 < err3) & (err2 < err4):
         return popt2
-    else:
+    elif err3 < err4:
         return popt3
+    else:
+        return popt4
 
 
 # For a sum of three gaussians
