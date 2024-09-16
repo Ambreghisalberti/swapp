@@ -30,7 +30,7 @@ def fit_populations_by_energy_range(x, y, verbose=False):
         fig, ax = plt.subplots(ncols=4, figsize=(20, 5))
     else:
         fig, ax = 0, [0, 0, 0, 0]
-    max_cold, center_cold, std_cold = fit_one_population(x, y, 0, 70, verbose=verbose, fig=fig, ax=ax[0])
+    max_cold, center_cold, std_cold = fit_one_population(x, y, 0, 150, verbose=verbose, fig=fig, ax=ax[0])
     # max_msh, center_msh   = fit_one_population(x, y, 80, 6000, verbose=verbose, fig=fig, ax=ax[1])
     max_msh, center_msh, std_msh = fit_one_population(x, y, 70, 800, verbose=verbose, fig=fig, ax=ax[1])
     # max_msp, center_msp   = fit_one_population(x, y, 6000, np.max(x), verbose=verbose, fig=fig, ax=ax[2])
