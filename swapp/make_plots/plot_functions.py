@@ -145,3 +145,19 @@ def class_2d_separation_scores(data, feature1, feature2, **kwargs):
     recall = round(tp / (tp + fn), 3)
 
     return precision, recall
+
+
+def scatterplot2d_BL_VS_nonBL(df, col1, col2, **kwargs):
+    if 'ax' in kwargs:
+        ax = kwargs['ax']
+    else:
+        _, ax = plt.subplots()
+
+    temp = df[df.isLabelled.values].dropna()
+    temp1 = temp[temp.label_BL.values == 0]
+    ax.scatter(temp1[col1].values, temp1[col2].values, s=20, color='blue', label='not BL')
+    temp2 = temp[temp.label_BL.values == 1]
+    ax.scatter(temp2[col1].values, temp2[col2].values, s=10, color='red', label='BL')
+    ax.legend()
+    ax.set_xlabel(col1)
+    ax.set_ylabel(col2)
