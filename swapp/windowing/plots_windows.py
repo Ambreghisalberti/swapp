@@ -5,6 +5,7 @@ import numpy as np
 import string
 from spok.models import planetary
 from spok.plot import planet_env
+from scipy.stats import binned_statistic_2d
 
 
 def diagnostic_windows(df, pos, omni, conditions, **kwargs):
@@ -224,3 +225,39 @@ def mosaic_structure(df, nbr_conditions, **kwargs):
         #mosaic += add+'\n'
         mosaic += [add]
     return mosaic
+
+
+def binned_stat(valuesx, valuesy, valuesz, ax, **kwargs):
+    stat, binsx, binsy, _ = binned_statistic_2d(valuesx, valuesy, valuesz, bins=kwargs.pop('bins', 100),
+                                                statistic=kwargs.pop('statistic', 'median'))
+    max_abs = np.nanmax(abs(stat))
+    im = ax.pcolormesh(binsx, binsy, stat.T, cmap=kwargs.pop('cmap', 'seismic'), vmin=vmin, vmax=vmax)
+    plt.colorbar(im)
+
+
+def planet_env_stat_binned(feature, df, pos, **kwargs):
+    if (df.index.values != pos.index.values).sum() > 0:
+        df = df[df.index.isin(pos.index.values)]
+        pos = pos[pos.index.isin(df.index.values)]
+    values = df[feature].values
+
+    ncols = 0
+    for str in ['x_slice', 'y_slice', 'z_slice']:
+        if str in kwargs:
+            ncols += 1
+    fig, ax = plt.subplots(ncols=ncols, figsize=(5 * ncols, 5))
+    col = 0
+    if 'x_slice' in kwargs:
+        binned_stat(pos.X.values, pos.Y.values, values, ax[col], **kwargs)
+        col += 1
+    if 'y_slice' in kwargs:
+        binned_stat(pos.X.values, pos.Z.values, values, ax[col], **kwargs)
+        col += 1
+    if 'z_slice' in kwargs:
+        binned_stat(pos.Y.values, pos.Z.values, values, ax[col], **kwargs)
+
+    msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
+    _, _ = planet_env.layout_earth_env(msh, figure=fig, axes=ax, x_lim=(-2, 25), **kwargs)
+    fig.suptitle(feature)
+
+    fig.tight_layout()
