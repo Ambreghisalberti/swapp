@@ -161,3 +161,31 @@ def scatterplot2d_BL_VS_nonBL(df, col1, col2, **kwargs):
     ax.legend()
     ax.set_xlabel(col1)
     ax.set_ylabel(col2)
+
+
+def hist1d_BL_VS_nonBL(df, feature, **kwargs):
+    if 'bins' in kwargs:
+        if isinstance(kwargs['bins'], int):
+            kwargs['nb_bins'] = kwargs.pop('bins')
+            bins = make_bins(kwargs.get('xscale','linear'), df, feature, **kwargs)
+        elif isinstance(kwargs['bins'], np.ndarray):
+            bins = kwargs['bins']
+        else:
+            raise Exception(f"If given as kwargs, bins should be either an int or an array, but is {kwargs['bins']}.")
+    else:
+        bins = make_bins(kwargs.get('xscale', 'linear'), df, feature, **kwargs)
+
+    if 'ax' in kwargs:
+        ax = kwargs['ax']
+    else:
+        _, ax = plt.subplots()
+
+    temp1 = df[df.label_BL.values == 0]
+    _ = ax.hist(temp1[feature].values, bins=bins, color='blue', label='not BL', alpha=0.5, density=True)
+    temp2 = df[df.label_BL.values == 1]
+    _ = ax.hist(temp2[feature].values, bins=bins, color='red', label='BL', alpha=0.5, density=True)
+    ax.legend()
+    ax.set_xlabel(feature)
+    ax.set_ylabel('Points count (normalized)')
+    ax.set_xscale(kwargs.get('xscale', 'linear'))
+    ax.set_yscale(kwargs.get('yscale', 'linear'))
