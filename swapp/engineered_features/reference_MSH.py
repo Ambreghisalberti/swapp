@@ -94,6 +94,7 @@ def compute_ref_MSH_feature(half_orbit_df, feature, percentage):
     else:
         columns = [feature, 'Np', 'Vx']
 
+    half_orbit_df = half_orbit_df[columns]
     half_orbit_df[f'ref_MSH_{feature}'] = np.nan
 
     # Every hour median
@@ -116,10 +117,10 @@ def compute_ref_MSH_feature(half_orbit_df, feature, percentage):
     if len(half_orbit_df[[f'ref_MSH_{feature}']].dropna()) > 0:
         ref_feature = half_orbit_df[f'ref_MSH_{feature}'].values
     else:
-        temp = half_orbit_df[columns].dropna().sort_values(by='Np')
+        half_orbit_df = half_orbit_df[columns].dropna().sort_values(by='Np')
         ref_feature = np.nan
-        if len(temp) > 0:
-            temporary = temp[feature].values.flatten()
+        if len(half_orbit_df) > 0:
+            temporary = half_orbit_df[feature].values.flatten()
             if int(len(temporary) * percentage) > 0:
                 ref_feature = np.median(temporary[-int(len(temporary) * percentage):])
 
