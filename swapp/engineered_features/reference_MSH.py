@@ -109,6 +109,7 @@ def compute_ref_MSH_feature(half_orbit_df, feature, percentage):
             ref_feature = np.median(temporary)
             half_orbit_df.loc[hours[j]:hours[j + 1], f'ref_MSH_{feature}'] = ref_feature
 
+    half_orbit_df = half_orbit_df.interpolate(method='nearest')
     half_orbit_df = half_orbit_df.ffill()  # forward fill for the last nans in the end of the dataframe
     half_orbit_df = half_orbit_df.bfill()  # backward fill for the first nans in the beginning of the dataframe
 
