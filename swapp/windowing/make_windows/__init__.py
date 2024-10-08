@@ -57,7 +57,7 @@ def prepare_df_pre_windowing_without_labels(data, pos, omni, **kwargs):
     Precondition : all_data has the following features : ['Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Vz', 'Tp']
     '''
     t1 = time.time()
-    pos = prepare_dayside_pre_windowing(pos)
+    prepare_dayside_pre_windowing(pos)
     t2 = time.time()
     print(f'Dayside prepared in {t2-t1} seconds.')
 
