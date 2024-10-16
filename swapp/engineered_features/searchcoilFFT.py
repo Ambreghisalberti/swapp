@@ -46,7 +46,7 @@ def download_searchcoil(start, stop, files, starts, stops, path):
 
 
 def compute_searchcoil_fft(all_data, subdata, window_fft, searchcoil_dictionary, files_path, start_index=0,
-                           save_name='', resolution=np.timedelta64(5, 's')):
+                           save_name='', resolution=np.timedelta64(5, 's'), verbose=False):
     files, starts, stops = (searchcoil_dictionary['files'], searchcoil_dictionary['starts'],
                             searchcoil_dictionary['stops'])
     save_path = f"/home/ghisalberti/make_datasets/{save_name}_searchcoil_fft.pkl"
@@ -70,9 +70,10 @@ def compute_searchcoil_fft(all_data, subdata, window_fft, searchcoil_dictionary,
 
         temp = searchcoil[time - resolution / 2: time + resolution / 2].values
         if len(temp) < window_fft - 1:
-            print(
-                f"The sub-searchcoil dataset should contain at least {window_fft - 1} points, "
-                f"but is {len(temp)}.")
+            if verbose:
+                print(
+                    f"The sub-searchcoil dataset should contain at least {window_fft - 1} points, "
+                    f"but is {len(temp)}.")
             fft_result = np.nan * np.ones(window_fft - 1)
         else:
             start_i = (len(temp) - window_fft + 1)//2
