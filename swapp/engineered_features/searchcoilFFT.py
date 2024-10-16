@@ -86,6 +86,9 @@ def compute_searchcoil_fft(all_data, subdata, window_fft, searchcoil_dictionary,
 
         if indice % 5000 == 0:
             pd.to_pickle(all_data[['fft_searchcoil']], save_path)
+            pd.to_pickle(all_data[['fft_searchcoil']], save_path[:-4]+'_copy.pkl')
+
             print(indice)
 
     pd.to_pickle(all_data[['fft_searchcoil']], save_path)
+    pd.to_pickle(all_data[['fft_searchcoil']], save_path[:-4] + '_copy.pkl')
