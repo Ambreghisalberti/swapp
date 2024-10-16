@@ -27,7 +27,14 @@ def download_searchcoil(start, stop, files, starts, stops, path):
         searchcoil = pd.concat([searchcoil, searchcoil2], axis=0)
         del searchcoil2
         print(f'...File {i + 1} also downloaded')
-    searchcoil['searchcoil'] = np.sqrt(searchcoil[0] ** 2 + searchcoil[1] ** 2 + searchcoil[2] ** 2)
+    if len(searchcoil.columns)>=3:
+        searchcoil['searchcoil'] = np.sqrt(searchcoil[0] ** 2 + searchcoil[1] ** 2 + searchcoil[2] ** 2)
+    elif len(searchcoil.columns)==1:
+        searchcoil = pd.DataFrame(searchcoil.values, index = searchcoil.index.values, columns = ['searchcoil'])
+    else:
+        raise Exception("The searchcoil files has no columns or two columns. It should either have the three "
+                        "components of searchcoil measures, or only the total searchcoil measures.")
+    
     searchcoil = searchcoil.sort_index()
     if searchcoil.index.duplicated().sum() > 0:
         searchcoil = searchcoil[~searchcoil.index.duplicated(keep='first')]
