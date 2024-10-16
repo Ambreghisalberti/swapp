@@ -68,14 +68,15 @@ def compute_searchcoil_fft(all_data, subdata, window_fft, searchcoil_dictionary,
                                              files_path)
             start, stop = searchcoil.index.values[0], searchcoil.index.values[-1]
 
-        temp = searchcoil[time - resolution / 2:time + resolution / 2].values
-        if len(temp) != window_fft - 1 and len(temp) != window_fft:
+        temp = searchcoil[time - resolution / 2: time + resolution / 2].values
+        if len(temp) < window_fft - 1:
             print(
-                f"The sub-searchcoil dataset should contain {window_fft - 1} or {window_fft} points, "
+                f"The sub-searchcoil dataset should contain at least {window_fft - 1} points, "
                 f"but is {len(temp)}.")
             fft_result = np.nan * np.ones(window_fft - 1)
         else:
-            fft_result = abs(fft(temp[:window_fft - 1])).flatten()
+            start_i = (len(temp) - window_fft + 1)//2
+            fft_result = abs(fft(temp[start_i:start_i + window_fft])).flatten()
         del temp
         assert len(fft_result) == window_fft - 1, f"The FFT results should contain {window_fft - 1} points."
         all_data.loc[subdata.index.values[indice], 'fft_searchcoil'] = fft_result.sum()
