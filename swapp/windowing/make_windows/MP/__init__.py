@@ -25,9 +25,9 @@ def prepare_df_MSP_MSH_overlap(df, win_length, **kwargs):
     return df
 
 
-def prepare_df_MSP_MSH_overlap_pre_windowing(df):
+def prepare_df_MSP_MSH_overlap_pre_windowing(df, **kwargs):
     data = df[['Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Vz', 'Tp']]
-    pred_boosting(data)
+    pred_boosting(data, **kwargs)
     regions(data)
     '''
       We add the results to the initial dataframe to keep the initial columns.

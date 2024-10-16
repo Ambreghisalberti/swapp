@@ -24,7 +24,10 @@ def pred(df, model):
     df.loc[:, 'regions_pred'] = predictions
 
 
-def pred_boosting(df):
+def pred_boosting(df, **kwargs):
     # Works only in 1.2.2 version of scikit learn : run "pip install scikit-learn==1.2.2 " before if needed
-    model = pd.read_pickle(f"{__HERE__}/boosting.pkl")
+    if 'model' in kwargs:
+        model = kwargs['model']
+    else:
+        model = pd.read_pickle(f"{__HERE__}/boosting.pkl")
     pred(df, model)

@@ -17,8 +17,8 @@ def create_catalogue(starts, stops, name, author='', **kwargs):
         assert len(tags)==len(starts), "For the current version of this function, you need to give tags for every event."
 
     for i, (start, stop) in enumerate(zip(starts, stops)):
-        start = dates_to_datetime(start)
-        stop = dates_to_datetime(stop)
+        start = dates_to_datetime(start, **kwargs)
+        stop = dates_to_datetime(stop, **kwargs)
         if are_tags:
             events += [tscat.create_event(start=start, stop=stop, author=author, tags=tags[i])]
         else:

@@ -89,7 +89,7 @@ def gap_to_MSH_class_separation_plot(df, feature1, feature2, **kwargs):
     stat_binned_class_separation_plot(df, 'gap_to_MSH_' + feature1, 'gap_to_MSH_' + feature2, **kwargs)
 
 
-def median_binned_class(data, feature1, feature2, ax, **kwargs):
+def median_binned_class(data, feature1, feature2, fig, ax, **kwargs):
     df = data.dropna()
     xscale = kwargs.get('xscale', 'linear')
     yscale = kwargs.get('yscale', 'linear')
@@ -103,7 +103,7 @@ def median_binned_class(data, feature1, feature2, ax, **kwargs):
 
     # Plots
     im = ax.pcolormesh(binsx, binsy, stat.T, norm=kwargs.get('norm', Normalize()))
-    # fig.colorbar(im, ax = ax)
+    fig.colorbar(im, ax = ax)
     ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_title(f'prec={precision}\nrec={recall}')

@@ -231,7 +231,7 @@ def binned_stat(valuesx, valuesy, valuesz, ax, **kwargs):
     stat, binsx, binsy, _ = binned_statistic_2d(valuesx, valuesy, valuesz, bins=kwargs.pop('bins', 100),
                                                 statistic=kwargs.pop('statistic', 'median'))
     max_abs = np.nanmax(abs(stat))
-    im = ax.pcolormesh(binsx, binsy, stat.T, cmap=kwargs.pop('cmap', 'seismic'), vmin=vmin, vmax=vmax)
+    im = ax.pcolormesh(binsx, binsy, stat.T, cmap=kwargs.pop('cmap', 'seismic'), vmin=-max_abs, vmax=max_abs)
     plt.colorbar(im)
 
 
