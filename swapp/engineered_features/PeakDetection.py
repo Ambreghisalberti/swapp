@@ -55,8 +55,15 @@ def find_populations(energy, flux, **kwargs):
             flux = np.concatenate((np.zeros(1), flux))
             populations = find_populations(energy, flux, prominence=prominence)
 
-        else:
+        elif prominence > np.max(flux)/100:
             populations = find_populations(energy, flux, prominence=prominence / 2)
+
+        else:
+            populations = {"energy": [],
+                       "width": [],
+                       "max": [],
+                       "lefts": [],
+                       "rights": []}
 
     return populations
 
