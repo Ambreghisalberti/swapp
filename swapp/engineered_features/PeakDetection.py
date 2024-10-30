@@ -63,7 +63,7 @@ def find_populations(energy, flux, **kwargs):
 
 def energy_flux_at(time, df):
     flux = df.loc[time][[f'spectro_{i}' for i in range(32)]].values.astype('float')
-    energy = pd.read_pickle('/home/ghisalberti/make_datasets/spectro_energies.pkl')['spectro_energies']
+    energy = pd.read_pickle('/home/ghisalberti/make_datasets/datasets/spectro_energies.pkl')['spectro_energies']
     return energy, flux
 
 
@@ -125,9 +125,11 @@ def get_pops_df(start, stop, df):
     return df_temp
 
 
-def save_pops(start, stop, df):
+def save_pops(start, stop, df, name=''):
     df_temp = get_pops_df(start, stop, df)
-    df_temp.to_pickle(f'/home/ghisalberti/make_datasets/detected_peaks/peaks_and_fft_{start}_{stop}.pkl')
+    if name != '':
+        name += '_'
+    df_temp.to_pickle(f'/home/ghisalberti/make_datasets/detected_peaks/peaks_and_fft_{name}{start}_{stop}.pkl')
 
 
 def stat_pops(start, stop, df):
