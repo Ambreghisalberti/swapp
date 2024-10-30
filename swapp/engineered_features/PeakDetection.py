@@ -55,7 +55,7 @@ def find_populations(energy, flux, **kwargs):
             flux = np.concatenate((np.zeros(1), flux))
             populations = find_populations(energy, flux, prominence=prominence)
 
-        elif prominence > np.max(flux)/100:
+        elif (np.max(flux) == 0) or (prominence > np.max(flux)/100):
             populations = find_populations(energy, flux, prominence=prominence / 2)
 
         else:
