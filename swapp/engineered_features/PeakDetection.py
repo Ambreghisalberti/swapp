@@ -37,7 +37,14 @@ def find_populations(energy, flux, **kwargs):
                        "lefts": lefts,
                        "rights": rights}
 
-    else:  # no peak found
+    elif (np.max(flux) == 0) or (prominence <= np.max(flux)/100):
+        populations = {"energy": [],
+                       "width": [],
+                       "max": [],
+                       "lefts": [],
+                       "rights": []}
+
+    else:  # no peak found even though non nul spectro, and high prominence is looked for
 
         peak_is_last_point = np.argmax(flux) == len(flux) - 1
 
@@ -54,9 +61,6 @@ def find_populations(energy, flux, **kwargs):
             energy = np.concatenate((((energy[0] - delta_energy) * np.ones(1)), energy))
             flux = np.concatenate((np.zeros(1), flux))
             populations = find_populations(energy, flux, prominence=prominence)
-
-        elif (np.max(flux) == 0) or (prominence > np.max(flux)/100):
-            populations = find_populations(energy, flux, prominence=prominence / 2)
 
         else:
             populations = {"energy": [],
