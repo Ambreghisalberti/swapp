@@ -47,19 +47,18 @@ def find_populations(energy, flux, **kwargs):
     else:  # no peak found even though non nul spectro, and high prominence is looked for
 
         peak_is_last_point = np.argmax(flux) == len(flux) - 1
+        peak_is_first_point = np.argmax(flux) == 0
 
         if peak_is_last_point:
             delta_energy = energy[-1] - energy[-2]
             energy = np.concatenate((energy, (energy[-1] + delta_energy) * np.ones(1)))
-            flux = np.concatenate((flux, np.zeros(1)))
+            flux = np.concatenate((flux, np.ones(1)*flux[-2]))
             populations = find_populations(energy, flux, prominence=prominence)
 
-        peak_is_first_point = np.argmax(flux) == 0
-
-        if peak_is_first_point:
+        elif peak_is_first_point:
             delta_energy = energy[1] - energy[0]
             energy = np.concatenate((((energy[0] - delta_energy) * np.ones(1)), energy))
-            flux = np.concatenate((np.zeros(1), flux))
+            flux = np.concatenate((np.ones(1)*flux[1], flux))
             populations = find_populations(energy, flux, prominence=prominence)
 
         else:
@@ -81,7 +80,7 @@ def energy_flux_at(time, df):
 def plot_populations(ax, populations):
     energies, widths, heights, lefts, rights = populations.values()
     ax.plot(energies, heights, "x")
-    ax.hlines(heights / 2, lefts, rights, color='red')
+    ax.hlines(np.array(heights) / 2, lefts, rights, color='red')
 
 
 def check_pops(energy, flux):
@@ -140,7 +139,8 @@ def save_pops(start, stop, df, name=''):
     df_temp = get_pops_df(start, stop, df)
     if name != '':
         name += '_'
-    df_temp.to_pickle(f'/home/ghisalberti/make_datasets/detected_peaks/peaks_and_fft_{name}{start}_{stop}.pkl')
+    df_temp.to_pickle(f'/home/ghisalberti/make_datasets/detected_peaks/peaks_and_fft_{name}{str(start)[:10]}_'
+                      f'{str(stop)[:10]}.pkl')
 
 
 def stat_pops(start, stop, df):
