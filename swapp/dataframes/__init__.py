@@ -23,10 +23,10 @@ def fill_small_gaps(df, n):
     return df_interpolated
 
 
-def get_consecutive_interval(df, times, dt=np.timedelta64(5, 's')):
+def get_consecutive_interval(times, dt=np.timedelta64(5, 's')):
     dt = str(dt).split(' ')[0] + (str(dt).split(' ')[1][0]).upper()
     times = np.sort(times)
-    all_times = pd.date_range(df.index.values[0], df.index.values[-1], freq=dt)
+    all_times = pd.date_range(times[0], times[-1], freq=dt)
     temp = pd.DataFrame(np.zeros(len(all_times)), index=all_times, columns=['is_present'])
     temp.loc[times, 'is_present'] = 1
     temp['change'] = [0] + list((temp.is_present.values[1:] != temp.is_present.values[:-1]).astype('int'))
