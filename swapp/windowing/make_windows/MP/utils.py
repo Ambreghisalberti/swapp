@@ -16,6 +16,12 @@ def flag_msp_and_msh(df, win_length, **kwargs):
     flag_select(df, win_length, flagger)
     return df
 
+def flag_sw(df, win_length, **kwargs):
+    flagger = {"name": "encountersSW", "fun": any, "features": ['isSW']}
+    flag(df, win_length, flagger, **kwargs)
+    flag_select(df, win_length, flagger)
+    return df
+
 def mp_r(df, model):
     """
     Returns the radius of Shue MP in the satellite direction (theta,phi)
