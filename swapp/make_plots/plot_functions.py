@@ -57,7 +57,10 @@ def stat_binned_class_separation_plot(data, feature1, feature2, **kwargs):
     binsx = make_bins(xscale, df, feature1, **kwargs)
     binsy = make_bins(yscale, df, feature2, **kwargs)
 
-    fig, ax = plt.subplots(ncols=3, figsize=(12, 4), sharex=True, sharey=True)
+    if ('fig' not in kwargs) or ('ax' not in kwargs):
+        fig, ax = plt.subplots(ncols=3, figsize=(12, 4), sharex=True, sharey=True)
+    else:
+        fig, ax = kwargs['fig'], kwargs['ax']
 
     for i, (method, norm) in enumerate(
             zip(['mean', 'median', 'count'], [LogNorm(), Normalize(), LogNorm(vmin=1)])):
