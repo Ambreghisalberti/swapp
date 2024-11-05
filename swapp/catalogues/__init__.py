@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
+
 def create_catalogue(starts, stops, name, author='', **kwargs):
     """
     start and stop are lists or arrays of start and stop times, """
@@ -14,7 +15,8 @@ def create_catalogue(starts, stops, name, author='', **kwargs):
     if 'tags' in kwargs:
         are_tags = True
         tags = kwargs['tags']
-        assert len(tags)==len(starts), "For the current version of this function, you need to give tags for every event."
+        assert len(tags) == len(starts), ("For the current version of this function, you need to give "
+                                          "tags for every event.")
 
     for i, (start, stop) in enumerate(zip(starts, stops)):
         start = dates_to_datetime(start, **kwargs)
@@ -49,7 +51,7 @@ def dates_to_datetime(date, **kwargs):
         format = kwargs.get('format', '%Y-%m-%dT%H:%M:%S.%f')
         return datetime.strptime(date, format)
     elif isinstance(date, np.datetime64):
-        return dates_to_datetime(str(date)[:22],format='%Y-%m-%dT%H:%M:%S.%f')
+        return dates_to_datetime(str(date)[:22], format='%Y-%m-%dT%H:%M:%S.%f')
 
 
 def catalogue_to_edges_df(path,

@@ -27,7 +27,7 @@ def find_populations(energy, flux, **kwargs):
                 "max": [],
                 "lefts": [],
                 "rights": []}
-    
+
     peak_indexes, prop = find_peaks(flux,
                                     prominence=(prominence, None),
                                     width=0,
@@ -53,17 +53,17 @@ def find_populations(energy, flux, **kwargs):
         if peak_is_last_point:
             delta_energy = energy[-1] - energy[-2]
             energy = np.concatenate((energy, (energy[-1] + delta_energy) * np.ones(1)))
-            flux = np.concatenate((flux, np.ones(1)*flux[-2]))
-            populations = find_populations(energy, flux, prominence=prominence, count=count+1)
+            flux = np.concatenate((flux, np.zeros(1)))
+            populations = find_populations(energy, flux, prominence=prominence, count_iterations=count+1)
 
         elif peak_is_first_point:
             delta_energy = energy[1] - energy[0]
             energy = np.concatenate((((energy[0] - delta_energy) * np.ones(1)), energy))
-            flux = np.concatenate((np.ones(1)*flux[1], flux))
-            populations = find_populations(energy, flux, prominence=prominence, count=count+1)
+            flux = np.concatenate((np.zeros(1), flux))
+            populations = find_populations(energy, flux, prominence=prominence, count_iterations=count+1)
 
         else:
-            populations = find_populations(energy, flux, prominence=prominence/2, count=count + 1)
+            populations = find_populations(energy, flux, prominence=prominence/2, count_iterations=count + 1)
 
     return populations
 

@@ -108,7 +108,7 @@ def flag_for_test(df, win_length, flagger, stride=1, type=bool):
         tmp = (count == win_length).values
     elif (flagger["fun"]).__name__== 'none':
         tmp = (count == 0).values
-    elif (flagger["fun"]).__name__== 'any':
+    elif (flagger["fun"]).__name__ == 'any':
         tmp = np.logical_and((count < win_length).values, (count > 0).values)
     else:
         raise Exception("This function has been coded to be called with flagger['fun'] = any, all or none")

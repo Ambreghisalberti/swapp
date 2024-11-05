@@ -114,7 +114,7 @@ def median_binned_class(data, feature1, feature2, fig, ax, **kwargs):
 
 
 def class_2d_separation_scores(data, feature1, feature2, **kwargs):
-    df = data.dropna()
+    df = data.dropna().astype('float')
 
     xscale = kwargs.get('xscale', 'linear')
     yscale = kwargs.get('yscale', 'linear')
@@ -164,6 +164,7 @@ def scatterplot2d_BL_VS_nonBL(df, col1, col2, **kwargs):
 
 
 def hist1d_BL_VS_nonBL(df, feature, **kwargs):
+    df = df.copy()[[feature, 'label_BL']].dropna()
     if 'bins' in kwargs:
         if isinstance(kwargs['bins'], int):
             kwargs['nb_bins'] = kwargs.pop('bins')
