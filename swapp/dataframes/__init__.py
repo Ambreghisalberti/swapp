@@ -25,7 +25,7 @@ def fill_small_gaps(df, n):
 
 def get_consecutive_interval(times, dt=np.timedelta64(5, 's')):
     split = str(dt).split(' ')
-    if split[1] == 'm':
+    if split[1] == 'minutes':
         dt = str(dt).split(' ')[0] + 'min'
     else:
         dt = str(dt).split(' ')[0] + (str(dt).split(' ')[1][0])
