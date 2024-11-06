@@ -24,7 +24,7 @@ def fill_small_gaps(df, n):
 
 
 def get_consecutive_interval(times, dt=np.timedelta64(5, 's')):
-    dt = str(dt).split(' ')[0] + (str(dt).split(' ')[1][0]).upper()
+    dt = str(dt).split(' ')[0] + (str(dt).split(' ')[1][0])
     times = np.sort(times)
     all_times = pd.date_range(times[0], times[-1], freq=dt)
     temp = pd.DataFrame(np.zeros(len(all_times)), index=all_times, columns=['is_present'])
