@@ -193,3 +193,4 @@ def hist1d_BL_VS_nonBL(df, feature, **kwargs):
     ax.set_ylabel('Points count (normalized)')
     ax.set_xscale(kwargs.get('xscale', 'linear'))
     ax.set_yscale(kwargs.get('yscale', 'linear'))
+
