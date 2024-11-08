@@ -229,7 +229,7 @@ def mosaic_structure(df, nbr_conditions, **kwargs):
 
 def binned_stat(valuesx, valuesy, valuesz, ax, **kwargs):
     if kwargs.get('norm','linear') == 'log':
-        valuesz = np.log(valuesz)
+        valuesz = np.log10(valuesz)
     stat, binsx, binsy, _ = binned_statistic_2d(valuesx, valuesy, valuesz, bins=kwargs.pop('bins', 100),
                                                 statistic=kwargs.pop('statistic', 'median'))
     max_abs = np.nanmax(abs(stat))
@@ -248,18 +248,21 @@ def planet_env_stat_binned(feature, df, pos, **kwargs):
         if str in kwargs:
             ncols += 1
     fig, ax = plt.subplots(ncols=ncols, figsize=(5 * ncols, 5))
+    if isinstance(ax, np.ndarray) is False:
+        ax = np.array([ax])
+
     col = 0
-    if 'x_slice' in kwargs:
+    if 'z_slice' in kwargs:
         binned_stat(pos.X.values, pos.Y.values, values, ax[col], **kwargs)
         col += 1
     if 'y_slice' in kwargs:
         binned_stat(pos.X.values, pos.Z.values, values, ax[col], **kwargs)
         col += 1
-    if 'z_slice' in kwargs:
+    if 'x_slice' in kwargs:
         binned_stat(pos.Y.values, pos.Z.values, values, ax[col], **kwargs)
 
     msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
     _, _ = planet_env.layout_earth_env(msh, figure=fig, axes=ax, x_lim=(-2, 25), **kwargs)
-    fig.suptitle(feature)
+    fig.suptitle(feature+' '+kwargs.get('title',''))
 
     fig.tight_layout()
