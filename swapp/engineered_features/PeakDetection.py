@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from swapp.windowing.make_windows.utils import time_resolution
+from multiprocessing import Pool
 
 
 def energy_at(indexes, energy_values):
@@ -132,12 +134,37 @@ def get_pops_df(start, stop, df):
     return df_temp
 
 
-def save_pops(start, stop, df, name=''):
+def save_pops(start, stop, df, **kwargs):
+    name = kwargs.get('name', f'{str(start)[:10]}_{str(stop)[:10]}')
     df_temp = get_pops_df(start, stop, df)
-    if name != '':
-        name += '_'
-    df_temp.to_pickle(f'/home/ghisalberti/make_datasets/detected_peaks/peaks_and_fft_{name}{str(start)[:10]}_'
-                      f'{str(stop)[:10]}.pkl')
+    df_temp.to_pickle(f'/home/ghisalberti/make_datasets/detected_peaks/peaks_and_fft_{name}.pkl')
+    #df_temp.to_pickle(f'/home/ghisalberti/make_datasets/detected_peaks/peaks_and_fft_{name}{str(start)[:10]}_'
+    #                  f'{str(stop)[:10]}.pkl')
+    if kwargs.get('verbose', False):
+        print(f'Peaks found and saved from {str(start)[:10]} to {str(stop)[:10]}.')
+
+
+def save_pops_tuple(inputs):
+    if isinstance(inputs[-1], dict):
+        save_pops(*inputs[:-1], **inputs[-1])
+    else:
+        save_pops(*inputs)
+
+
+def optimized_save_pops(start, stop, df, **kwargs):
+    kwargs['name'] = kwargs.pop('name', f'{str(start)[:10]}_{str(stop)[:10]}')
+
+    starts = pd.date_range(start, stop, freq=time_resolution(df)*100000, inclusive='left')
+    stops = list(starts[1:])+[stop]
+    nb_threads = kwargs.get('nb_threads', 15)
+    nb_batches = int(np.ceil(len(starts)/nb_threads))
+
+    for i in range(nb_batches):
+        sub_starts = starts[i*nb_threads:(i+1)*nb_threads]
+        sub_stops  = stops[ i*nb_threads:(i+1)*nb_threads]
+
+        with Pool(15) as p:
+            p.map(save_pops_tuple, zip(sub_starts, sub_stops, [kwargs for _ in range(len(sub_starts))]))
 
 
 def stat_pops(start, stop, df):

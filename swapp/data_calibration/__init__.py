@@ -95,7 +95,8 @@ def load_temperature_themis(satellite, start, stop):
 
 def load_V_themis(satellite, start, stop):
     # Vx, Vy, Vz, V
-    v = spz.get_data(f'cda/TH{satellite.upper()}_L2_ESA/th{satellite}_peir_velocity_gsm', start, stop)
+    #v = spz.get_data(f'cda/TH{satellite.upper()}_L2_ESA/th{satellite}_peir_velocity_gsm', start, stop)
+    v = spz.get_data(f'cda/TH{satellite.upper()}_L2_MOM/th{satellite}_peim_velocity_gsm', start, stop)
     if v is not None:
         v = pd.DataFrame(v.values, index=v.time, columns=['Vx', 'Vy', 'Vz'])[
             start: stop + np.timedelta64(1, 's')].resample('5S').mean()
