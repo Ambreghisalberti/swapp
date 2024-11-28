@@ -5,6 +5,8 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from scipy.signal import medfilt
 from scipy.spatial.distance import cdist
+from sklearn.decomposition import PCA, KernelPCA
+from scipy.ndimage import gaussian_filter
 
 
 def find_nearest_neighbour_in_free_list(distance_matrix, indice, free_points_booleans):
@@ -92,8 +94,25 @@ def find_path_nearest_neighbours(distance_matrix, **kwargs):
     return path
 
 
-def plot_temporal_and_reordered_feature(feature, path, df, smoothed_df, **kwargs):
+def find_shortest_path_PCA(df):
+    pca = KernelPCA(n_components=1)
+    projection = pca.fit_transform(df)
+
+    projection = pd.DataFrame(projection, columns=['projection_1D'], index=np.arange(len(df))).sort_values(
+        by='projection_1D')
+    path = projection.index.values
+    # Automatic way to know if the order is good or opposite
+    dist1 = np.sqrt((df.iloc[path[0]] - df.iloc[0])**2).sum()
+    dist2 = np.sqrt((df.iloc[path[0]] - df.iloc[-1])**2).sum()
+    if dist1 > dist2:
+        path = path[::-1]
+
+    return path
+
+
+def plot_temporal_and_reordered_feature(feature, path, df, **kwargs):
     show_smoothed = kwargs.get('show_smoothed', False)
+    kernel_filter = kwargs.get('kernel_filter', 5)
 
     if ('fig' not in kwargs) or ('ax' not in kwargs):
         fig, ax = plt.subplots()
@@ -101,20 +120,22 @@ def plot_temporal_and_reordered_feature(feature, path, df, smoothed_df, **kwargs
         fig, ax = kwargs['fig'], kwargs['ax']
 
     ax.plot(df.index.values, df[feature].values.flatten(), label='temporal')
-    ax.plot(df.index.values, df[feature].values.flatten()[path], label='spatial')
     if show_smoothed:
-        ax.plot(smoothed_df.index.values, smoothed_df[feature].values.flatten(), label='Smoothed temporal')
-        ax.plot(smoothed_df.index.values, smoothed_df[feature].values.flatten()[path], label='Smoothed spatial')
+        # ax.plot(smoothed_df.index.values, smoothed_df[feature].values.flatten(), label='Smoothed temporal')
+        ax.plot(df.index.values, gaussian_filter(df[feature].values.flatten()[path], kernel_filter), label='Smoothed spatial')
+    else:
+        ax.plot(df.index.values, df[feature].values.flatten()[path], label='spatial')
+
     ax.legend()
 
 
-def plot_temporal_and_reordered(path, df, smoothed_df, **kwargs):
+def plot_temporal_and_reordered(path, df, **kwargs):
     columns = kwargs.pop('columns', df.columns)
     nrows = len(columns)
     fig, ax = plt.subplots(nrows=nrows, figsize=(12, nrows * 1.5))
 
     for i, col in enumerate(columns):
-        plot_temporal_and_reordered_feature(col, path, df, smoothed_df, fig=fig, ax=ax[i], **kwargs)
+        plot_temporal_and_reordered_feature(col, path, df, fig=fig, ax=ax[i], **kwargs)
         ax[i].set_ylabel(col)
         ax[i].set_xlabel('Time')
     if 'title' in kwargs:
@@ -123,21 +144,27 @@ def plot_temporal_and_reordered(path, df, smoothed_df, **kwargs):
     plt.tight_layout()
 
 
-def reorder(df, columns_ro_reorder, kernel_medfilt, **kwargs):
+def reorder(df, columns_to_reorder, **kwargs):
     columns_to_plot = kwargs.pop('columns_to_plot', ['B', 'Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Tpara', 'Tperp'])
 
     values = df.values
-    values = medfilt(values, kernel_size=[kernel_medfilt, 1])
+    # values = medfilt(values, kernel_size=[kernel_medfilt, 1])
     smoothed_data = pd.DataFrame(values, index=df.index.values, columns=[df.columns])
 
-    values = smoothed_data[columns_ro_reorder].values
+    values = smoothed_data[columns_to_reorder].values
     scaler = StandardScaler()
     scaled_values = scaler.fit_transform(values)
 
     distance_matrix = cdist(scaled_values, scaled_values)
-    path = find_path_nearest_neighbours(distance_matrix)
+    method = kwargs.get('method','insertion')
+    if method == 'insertion':
+        path = find_path_nearest_neighbours(distance_matrix)
+    elif method == 'closest':
+        path = find_path_nearest_neighbours_locally(distance_matrix)
+    elif method == 'PCA':
+        path = find_shortest_path_PCA(pd.DataFrame(scaled_values, index=smoothed_data.index.values,
+                                                   columns=columns_to_reorder))
 
-    plot_temporal_and_reordered(path, df, smoothed_data, columns=columns_to_plot, ncols=3,
-                                title=f'Reordering after median filter of kernel {kernel_medfilt}', **kwargs)
+    plot_temporal_and_reordered(path, df, columns=columns_to_plot, ncols=3, **kwargs)
 
     return path
