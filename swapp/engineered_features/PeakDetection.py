@@ -20,7 +20,7 @@ def energy_at(indexes, energy_values):
 
 
 def find_populations(energy, flux, **kwargs):
-    prominence = kwargs.get('prominence', 5 * 10 ** 5)
+    prominence = kwargs.get('prominence', np.max(flux)/2)
     count = kwargs.get('count_iterations', 0)
 
     if (count > 200) or (np.max(flux) == 0) or (prominence <= np.max(flux)/100):
