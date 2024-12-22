@@ -26,29 +26,40 @@ def get_title(feature):
         return feature
 
 
-def plot_stat_binned_reconnection_evidence(featurex, featurey, featurez, df, nbins=15):
-    fig, ax = plt.subplots(ncols=2, figsize=(10, 5))
-
-    xlabel = get_label(featurex)
-    ylabel = get_label(featurey)
-    for i in range(2):
-        ax[i].set_xlabel(xlabel)
-        ax[i].set_ylabel(ylabel)
+def plot_stat_binned_reconnection_evidence(featurex, featurey, featurez, df, nbins=15, **kwargs):
 
     # Feature repartition
-    stat, xbins, ybins, _ = binned_statistic_2d(df[featurex].values.flatten(), df[featurey].values.flatten(),
-                                                df[featurez].values.flatten(), statistic='mean', bins=nbins)
-    im = ax[0].pcolormesh(xbins, ybins, stat.T)
-    fig.colorbar(im, ax=ax[0])
-    title = get_title(featurez)
-    ax[0].set_title(title)
+    if featurez == None:
+        fig, ax = plt.subplots(figsize=(5, 5))
+        ax = [ax]
+        values = np.zeros(len(df))
+    else:
+        fig, ax = plt.subplots(ncols=2, figsize=(10, 5))
+        values = df[featurez].values.flatten()
+
+
+    i = 0
+    if featurez is not None:
+        stat, xbins, ybins, _ = binned_statistic_2d(df[featurex].values.flatten(), df[featurey].values.flatten(),
+                                                values, statistic='mean', bins=nbins)
+        im = ax[i].pcolormesh(xbins, ybins, stat.T, **kwargs)
+        fig.colorbar(im, ax=ax[i])
+        title = get_title(featurez)
+        ax[i].set_title(title)
+        i += 1
 
     # Also count nb points in bins!
     stat, xbins, ybins, _ = binned_statistic_2d(df[featurex].values.flatten(), df[featurey].values.flatten(),
-                                                df[featurez].values.flatten(), statistic='count', bins=nbins)
-    im = ax[1].pcolormesh(xbins, ybins, stat.T)
-    fig.colorbar(im, ax=ax[1])
-    ax[1].set_title('Point count')
+                                                values, statistic='count', bins=nbins)
+    im = ax[i].pcolormesh(xbins, ybins, stat.T, **kwargs)
+    fig.colorbar(im, ax=ax[i])
+    ax[i].set_title('Point count')
+
+    xlabel = get_label(featurex)
+    ylabel = get_label(featurey)
+    for i in range(len(ax)):
+        ax[i].set_xlabel(xlabel)
+        ax[i].set_ylabel(ylabel)
 
     fig.tight_layout()
 
@@ -85,9 +96,10 @@ def compute_diff_parker_spiral_orientations(df):
     return diff, ratio, nb_points, relative_diff, proportion
 
 
-def compute_temporal_diff_parker_spiral_orientations(df, starts, stops, verbose=False, **kwargs):
+def compute_temporal_diff_parker_spiral_orientations(df, starts, stops, verbose_text=False,
+                                                     verbose_plot=False, **kwargs):
     all_diff, all_ratio, all_nb_points, all_relative_diff, all_proportion = [], [], [], [], []
-    if verbose:
+    if verbose_text:
         title = kwargs.get('title')
         print(f'For {title}, the proportion of posCLA & negCOA is of:')
     for start, stop in zip(starts, stops):
@@ -97,10 +109,17 @@ def compute_temporal_diff_parker_spiral_orientations(df, starts, stops, verbose=
         all_nb_points += [nb_points]
         all_relative_diff += [relative_diff]
         all_proportion += [proportion]
-        if verbose:
+        if verbose_text:
             print(f'- {proportion} between {start} and {stop}, for a total of {nb_points} points.')
-    if verbose:
+    if verbose_text:
         print('\n')
+
+    if verbose_plot:
+        plt.figure()
+        plt.plot(starts, all_proportion)
+        plt.axhline(0.5, linestyle='--', color='grey', alpha=0.5)
+        plt.title('Proportion of pos CLA & neg COA\npos CLA & neg COA / (pos CLA & neg COA  +  neg CLA & pos COA) ')
+
     return all_diff, all_ratio, all_nb_points, all_relative_diff, all_proportion
 
 
@@ -164,3 +183,5 @@ def compare_temporal_bias_parker_spiral(df, omni, starts, stops, verbose=False):
     arrays = fill_comparative_scores_parker(arrays, scores, 'detected BL')
 
     return arrays
+
+
