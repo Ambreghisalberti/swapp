@@ -148,7 +148,10 @@ def time_resolution(df):
     return the time resolution
     precondition: assumes the df has uniform resolution
     """
-    return df.index[1] - df.index[0]
+    if len(df)>0:
+        return df.index[1] - df.index[0]
+    else:
+        return np.timedelta64(5, 's')
 
 
 def select_windows_original(df, condition):

@@ -41,7 +41,17 @@ def read_catalogue_events(path):
 def resolution_to_string(resolution):
     frequency = str(resolution)  # Ex: numpy.timedelta64(90,'s')
     [nbr, text] = frequency.split(' ')  # Ex: ['90','seconds']
-    return nbr + text[0]  # Ex: '90s'
+    if text == 'seconds':
+        text = 's'
+    elif text == 'minutes':
+        text = 'min'
+    elif text == 'days':
+        text = 'D'
+    else:
+        raise Exception('The resolution is not in seconds, minutes or days. '
+                        'The text form of this resolution must be explicited added in the function '
+                        'resolution_to_string.')
+    return nbr + text  # Ex: '90s'
 
 
 def dates_to_datetime(date, **kwargs):
