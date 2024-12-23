@@ -58,14 +58,23 @@ def read_catalogue_events(path):
 def resolution_to_string(resolution):
     frequency = str(to_timedelta64(resolution))  # Ex: numpy.timedelta64(90,'s')
     [nbr, text] = frequency.split(' ')  # Ex: ['90','seconds']
-    if text == 'seconds':
+    if text == 'nanoseconds':
+        text = 'N'
+    elif text == 'microseconds':
+        text = 'U'
+    elif text == 'milliseconds':
+        text = 'L'
+    elif text == 'seconds':
         text = 's'
     elif text == 'minutes':
-        text = 'min'
+        text = 'T'
+    elif text == 'hours':
+        text = 'H'
     elif text == 'days':
         text = 'D'
+
     else:
-        raise Exception('The resolution is not in seconds, minutes or days. '
+        raise Exception('The resolution is not in a format given explicitely in resolution_to_string. '
                         'The text form of this resolution must be explicited added in the function '
                         'resolution_to_string.')
     return nbr + text  # Ex: '90s'
