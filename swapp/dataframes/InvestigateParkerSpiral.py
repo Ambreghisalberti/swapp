@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import binned_statistic_2d
 import numpy as np
 import pandas as pd
+from scipy.ndimage import gaussian_filter
 
 
 def get_label(feature):
@@ -42,7 +43,7 @@ def plot_stat_binned_reconnection_evidence(featurex, featurey, featurez, df, nbi
     if featurez is not None:
         stat, xbins, ybins, _ = binned_statistic_2d(df[featurex].values.flatten(), df[featurey].values.flatten(),
                                                 values, statistic='mean', bins=nbins)
-        im = ax[i].pcolormesh(xbins, ybins, stat.T, **kwargs)
+        im = ax[i].pcolormesh(xbins, ybins, gaussian_filter(stat.T, sigma=1), **kwargs)
         fig.colorbar(im, ax=ax[i])
         title = get_title(featurez)
         ax[i].set_title(title)
@@ -51,7 +52,7 @@ def plot_stat_binned_reconnection_evidence(featurex, featurey, featurez, df, nbi
     # Also count nb points in bins!
     stat, xbins, ybins, _ = binned_statistic_2d(df[featurex].values.flatten(), df[featurey].values.flatten(),
                                                 values, statistic='count', bins=nbins)
-    im = ax[i].pcolormesh(xbins, ybins, stat.T, **kwargs)
+    im = ax[i].pcolormesh(xbins, ybins, gaussian_filter(stat.T, sigma=1), **kwargs)
     fig.colorbar(im, ax=ax[i])
     ax[i].set_title('Point count')
 

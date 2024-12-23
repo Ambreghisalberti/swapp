@@ -2,7 +2,24 @@ import tscat
 import json
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
+from functools import reduce
+import operator
+
+TIME_DELTA_ATTR_MAP = (
+        ('days', 'D'),
+        ('seconds', 's'),
+        ('microseconds', 'us')
+        )
+
+
+def to_timedelta64(value: timedelta) -> np.timedelta64:
+    if isinstance(value, np.timedelta64):
+        return value
+    else:
+        return reduce(operator.add,
+            (np.timedelta64(getattr(value, attr), code)
+            for attr, code in TIME_DELTA_ATTR_MAP if getattr(value, attr) > 0))
 
 
 def create_catalogue(starts, stops, name, author='', **kwargs):
@@ -39,7 +56,7 @@ def read_catalogue_events(path):
 
 
 def resolution_to_string(resolution):
-    frequency = str(resolution)  # Ex: numpy.timedelta64(90,'s')
+    frequency = str(to_timedelta64(resolution))  # Ex: numpy.timedelta64(90,'s')
     [nbr, text] = frequency.split(' ')  # Ex: ['90','seconds']
     if text == 'seconds':
         text = 's'
