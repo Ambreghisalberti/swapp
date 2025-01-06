@@ -1,10 +1,10 @@
 from sklearn.preprocessing import StandardScaler
-from sklearn.impute import SimpleImputer
 import pandas as pd
 import numpy as np
 import os
 from scipy.signal import medfilt
 __HERE__ = os.path.dirname(__file__)
+
 
 def standardScaling(df):
     """ Precondition : df has to be very big, so the scaling is close to the one of the traintest of the model.
