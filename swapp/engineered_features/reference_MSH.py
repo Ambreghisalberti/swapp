@@ -2,6 +2,7 @@ from swapp.engineered_features.gaussian_fits import *
 from scipy.signal import find_peaks
 import pandas as pd
 import warnings
+from multiprocessing import Pool
 
 
 def find_apogee_times(df):
@@ -149,3 +150,76 @@ def get_ref_MSH_feature_over_time(apogee_times, perigee_times, df, feature, **kw
         half_orbit_df = df[apogee:perigee_times[i + 1]]
         median = compute_ref_MSH_feature(half_orbit_df, feature, percentage)
         df.loc[df[apogee: perigee_times[i + 1]].index.values, 'ref_MSH_' + feature] = median
+
+
+def compute_apogees_perigees(df, sat):
+    """ This dataframe must contain R the radial distance from the satellite to the Earth."""
+    apogee_times = find_apogee_times(df)
+    print(f'{len(apogee_times)} apogees have been found.')
+    pd.to_pickle(apogee_times, f'/home/ghisalberti/make_datasets/MSH_reference/'
+                               f'{sat}_all_apogee_times.pkl')
+    perigee_times = find_perigee_times(df)
+    print(f'{len(perigee_times)} perigees have been found.')
+    pd.to_pickle(perigee_times, f'/home/ghisalberti/make_datasets/MSH_reference/'
+                                f'{sat}_all_perigee_times.pkl')
+
+    find_closest_apogees_perigees(apogee_times, perigee_times, df)
+    return apogee_times, perigee_times
+
+
+def compute_ref_MSH_values(all_data, sat, path, apogee_times, perigee_times):
+    """ The dataframe all_data must already contain the following features : """
+
+    features = ['Vy', 'Vz', 'Vx', 'Vn_MP', 'Vtan1_MP', 'Vtan2_MP', 'V', 'Np', 'Tpara',
+                'Tperp', 'Tp', 'logNp', 'logTp', 'anisotropy']
+
+    def f_pool(feature):
+        get_ref_MSH_feature_over_time(apogee_times, perigee_times, all_data, feature, percentage=0.05)
+        all_data.to_pickle(path)
+        all_data.to_pickle(path[:-3] + '_copy.pkl')
+        pd.to_pickle(all_data[['ref_MSH_' + feature]],
+                     f"/home/ghisalberti/make_datasets/MSH_reference/"
+                     f"{sat}_ref_MSH_{feature}_hourly.pkl")
+        print(f'{feature} for reference MSH is done')
+
+    with Pool(len(features)) as p:
+        p.map(f_pool, features)
+
+
+def compute_gap_to_MSH(all_data, path):
+    """ The dataframe all_data must already contain the reference MSH values for all the
+    following features, computed with compute_ref_MSH_values."""
+    features = ['Np', 'Tpara', 'Tperp', 'Tp', 'logNp', 'logTp', 'anisotropy', 'V', 'Vx', 'Vy',
+                'Vz', 'Vtan1_MP', 'Vtan2_MP', 'Vn_MP']
+
+    # Computing relative error
+    for feature in features[:-6]:
+        all_data['gap_to_MSH_' + feature] = all_data[feature].values - all_data['ref_MSH_' + feature].values
+        all_data['relative_gap_with_MSH_' + feature] = abs(
+            all_data['gap_to_MSH_' + feature].values / all_data['ref_MSH_' + feature].values)
+        # For features that can be null, I normalize with the positive norm instead
+    for speed in features[-6:]:
+        all_data[f'relative_gap_with_MSH_{speed}'] = (all_data[speed].values - all_data[
+            f'ref_MSH_{speed}'].values) / all_data.ref_MSH_V.values
+
+    all_data.to_pickle(path)
+
+
+def normalize_flow_by_Va(all_data, path):
+    """ The dataframe all_data must already contain Vtan1_MP, Vtan2_MP and Va."""
+    for speed in ['Vtan1_MP', 'Vtan2_MP']:
+        all_data[f'gap_to_MSH_{speed}_over_Va'] = (all_data[speed].values - all_data[
+            f'ref_MSH_{speed}'].values) / all_data.Va.values
+    all_data.to_pickle(path)
+
+
+def compute_all_ref_MSH_data(all_data, sat, path):
+    """ This dataframe must contain the following columns :
+    R, Vy, Vz, Vx, Vn_MP, Vtan1_MP, Vtan2_MP, V, Np, Tpara, Tperp, Tp, logNp, logTp, anisotropy, Va """
+
+    # Also saves the apogee and perigee times in pickle files,
+    # and adds in all_data the columns closest_apogee and closest_perigee
+    apogee_times, perigee_times = compute_apogees_perigees(all_data, sat)
+    compute_ref_MSH_values(all_data, sat, path, apogee_times, perigee_times)
+    compute_gap_to_MSH(all_data, path)
+    normalize_flow_by_Va(all_data, path)
