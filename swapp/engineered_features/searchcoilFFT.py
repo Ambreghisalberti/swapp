@@ -113,15 +113,14 @@ def compute_fft_file(df, sat, path, files, start_index, **kwargs):
     B = read_best_file(df.index.values[start_index], dt, path, files)
 
     i = start_index
+    count = 0
     for i in range(start_index, len(df)):
         t = df.index.values[i]
         B = provide_searchcoil_file(t, dt, B, files, path)
 
         Bt = B[t - dt / 2: t + dt / 2].Bt.values
         if len(Bt) < window_fft:
-            print(
-                f"The high resolution B subdataset around {t} should contain at least {window_fft} points, "
-                f"but contains {len(Bt)} points.")
+            count += 1
             fft_result = np.nan * np.ones(window_fft)
         else:
             Bt = Bt[:window_fft]
@@ -134,7 +133,8 @@ def compute_fft_file(df, sat, path, files, start_index, **kwargs):
 
         if i % 5000 == 0:
             fft_Bt.to_pickle(f'/home/ghisalberti/make_datasets/B_fluctuations/{sat}_searchcoil_fft_{start}_{stop}.pkl')
-            print(f'FFT saved, i={i}')
+            print(f'FFT saved, i={i}.\nThe searchcoil subdataset around a time should contain at least '
+                  f'{window_fft} points, but contains less for {count} times out of {i}.')
 
     fft_Bt.to_pickle(f'/home/ghisalberti/make_datasets/B_fluctuations/{sat}_searchcoil_fft_{start}_{stop}.pkl')
     print(f'FFT saved, i={i}')
