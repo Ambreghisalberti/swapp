@@ -32,6 +32,7 @@ def find_closest_apogees_perigees(apogee_times, perigee_times, df):
         apogee_times = apogee_times[1:]
     if apogee_times[-1] > perigee_times[-1]:
         apogee_times = apogee_times[:-1]
+    assert len(apogee_times) == len(perigee_times)-1, "Code error in find_closest_apogees_perigees"
 
     for i, apogee in enumerate(apogee_times):
         assert perigee_times[i] < apogee, (f"Perigee {perigee_times[i]} (n°{i}) should be before apogee {apogee} "
