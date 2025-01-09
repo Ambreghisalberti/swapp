@@ -30,8 +30,10 @@ def find_closest_apogees_perigees(apogee_times, perigee_times, df):
 
     if apogee_times[0] < perigee_times[0]:
         apogee_times = apogee_times[1:]
+    if apogee_times[-1] > perigee_times[-1]:
+        apogee_times = apogee_times[:-1]
 
-    for i, apogee in enumerate(apogee_times[:-1]):
+    for i, apogee in enumerate(apogee_times):
         assert perigee_times[i] < apogee, (f"Perigee {perigee_times[i]} (n°{i}) should be before apogee {apogee} "
                                            f"(n°{i})")
         df.loc[df[perigee_times[i]:apogee].index.values, 'apogee_time'] = apogee
