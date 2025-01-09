@@ -31,17 +31,16 @@ def find_closest_apogees_perigees(apogee_times, perigee_times, df):
     if apogee_times[0] < perigee_times[0]:
         apogee_times = apogee_times[1:]
 
-    for i, apogee in enumerate(apogee_times):
+    for i, apogee in enumerate(apogee_times[:-1]):
         assert perigee_times[i] < apogee, (f"Perigee {perigee_times[i]} (n°{i}) should be before apogee {apogee} "
                                            f"(n°{i})")
         df.loc[df[perigee_times[i]:apogee].index.values, 'apogee_time'] = apogee
         df.loc[df[perigee_times[i]:apogee].index.values, 'perigee_time'] = perigee_times[i]
 
-        if i < len(apogee_times)-1:
-            assert perigee_times[
-                       i + 1] > apogee, (f"Perigee {perigee_times[i + 1]} (n°{i + 1}) should be after apogee {apogee} "
-                                         f"(n°{i})")
-            df.loc[df[apogee:perigee_times[i + 1]].index.values, 'apogee_time'] = apogee
+        assert perigee_times[
+                   i + 1] > apogee, (f"Perigee {perigee_times[i + 1]} (n°{i + 1}) should be after apogee {apogee} "
+                                     f"(n°{i})")
+        df.loc[df[apogee:perigee_times[i + 1]].index.values, 'apogee_time'] = apogee
         df.loc[df[apogee:perigee_times[i + 1]].index.values, 'perigee_time'] = perigee_times[i + 1]
 
 
