@@ -23,16 +23,21 @@ def get_closest(time, times):
     return times[np.argmin(abs(dt))]
 
 
-def find_closest_apogees_perigees(apogee_times, perigee_times, df):
-    # find dates of closest apogee and perigee for every t (could be made more quickly)
-    df['apogee_time'] = np.nan
-    df['perigee_time'] = np.nan
-
+def preprocess_perigees_apogees(apogee_times, perigee_times):
     if apogee_times[0] < perigee_times[0]:
         apogee_times = apogee_times[1:]
     if apogee_times[-1] > perigee_times[-1]:
         apogee_times = apogee_times[:-1]
     assert len(apogee_times) == len(perigee_times)-1, "Code error in find_closest_apogees_perigees"
+    return apogee_times, perigee_times
+
+
+def find_closest_apogees_perigees(apogee_times, perigee_times, df):
+    # find dates of closest apogee and perigee for every t (could be made more quickly)
+    df['apogee_time'] = np.nan
+    df['perigee_time'] = np.nan
+
+    apogee_times, perigee_times = preprocess_perigees_apogees(apogee_times, perigee_times)
 
     for i, apogee in enumerate(apogee_times):
         assert perigee_times[i] < apogee, (f"Perigee {perigee_times[i]} (n°{i}) should be before apogee {apogee} "
@@ -136,8 +141,7 @@ def get_ref_MSH_feature_over_time(apogee_times, perigee_times, df, feature, **kw
 
     df['ref_MSH_' + feature] = np.nan
 
-    if apogee_times[0] < perigee_times[0]:
-        apogee_times = apogee_times[1:]
+    apogee_times, perigee_times = preprocess_perigees_apogees(apogee_times, perigee_times)
 
     for i, apogee in enumerate(apogee_times):
         assert perigee_times[i] < apogee, (f"Perigee {perigee_times[i]} (n°{i}) should be before apogee {apogee} "
