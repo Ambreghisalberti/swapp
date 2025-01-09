@@ -169,8 +169,8 @@ def initialize_fft(df, start_index, sat):
 
 def read_file(path, files, i):
     sp = pd.read_pickle(path + files['files'][i])
-    B = pd.DataFrame(sp.values, index=sp.time, columns=sp.columns)
-    return B
+    # B = pd.DataFrame(sp.values, index=sp.time, columns=sp.columns)
+    return sp
 
 
 def read_best_file(t, dt, path, files):
