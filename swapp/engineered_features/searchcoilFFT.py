@@ -140,7 +140,10 @@ def read_best_file(t, dt, path, files):
 
 
 def provide_searchcoil_file(t, dt, current_file, files, path):
-    current_start, current_stop = current_file.index.values[0], current_file.index.values[-1]
-    if t + dt / 2 > current_stop or t - dt / 2 < current_start:
+    if current_file is None:
         current_file = read_best_file(t, dt, path, files)
+    else:
+        current_start, current_stop = current_file.index.values[0], current_file.index.values[-1]
+        if t + dt / 2 > current_stop or t - dt / 2 < current_start:
+            current_file = read_best_file(t, dt, path, files)
     return current_file
