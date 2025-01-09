@@ -2,7 +2,6 @@ from swapp.engineered_features.gaussian_fits import *
 from scipy.signal import find_peaks
 import pandas as pd
 import warnings
-from multiprocessing import Pool
 
 
 def find_apogee_times(df):
@@ -38,10 +37,11 @@ def find_closest_apogees_perigees(apogee_times, perigee_times, df):
         df.loc[df[perigee_times[i]:apogee].index.values, 'apogee_time'] = apogee
         df.loc[df[perigee_times[i]:apogee].index.values, 'perigee_time'] = perigee_times[i]
 
-        assert perigee_times[
-                   i + 1] > apogee, (f"Perigee {perigee_times[i + 1]} (n°{i + 1}) should be after apogee {apogee} "
-                                     f"(n°{i})")
-        df.loc[df[apogee:perigee_times[i + 1]].index.values, 'apogee_time'] = apogee
+        if i < len(apogee_times)-1:
+            assert perigee_times[
+                       i + 1] > apogee, (f"Perigee {perigee_times[i + 1]} (n°{i + 1}) should be after apogee {apogee} "
+                                         f"(n°{i})")
+            df.loc[df[apogee:perigee_times[i + 1]].index.values, 'apogee_time'] = apogee
         df.loc[df[apogee:perigee_times[i + 1]].index.values, 'perigee_time'] = perigee_times[i + 1]
 
 
@@ -173,7 +173,7 @@ def compute_ref_MSH_values(all_data, sat, path, apogee_times, perigee_times):
     features = ['Vy', 'Vz', 'Vx', 'Vn_MP', 'Vtan1_MP', 'Vtan2_MP', 'V', 'Np', 'Tpara',
                 'Tperp', 'Tp', 'logNp', 'logTp', 'anisotropy']
 
-    def f_pool(feature):
+    '''def f_pool(feature):
         get_ref_MSH_feature_over_time(apogee_times, perigee_times, all_data, feature, percentage=0.05)
         all_data.to_pickle(path)
         all_data.to_pickle(path[:-3] + '_copy.pkl')
@@ -184,6 +184,16 @@ def compute_ref_MSH_values(all_data, sat, path, apogee_times, perigee_times):
 
     with Pool(len(features)) as p:
         p.map(f_pool, features)
+    '''
+    for feature in features:
+        get_ref_MSH_feature_over_time(apogee_times, perigee_times, all_data, feature,
+                                      percentage=0.05)
+        all_data.to_pickle(path)
+        all_data.to_pickle(path[:-3] + '_copy.pkl')
+        pd.to_pickle(all_data[['ref_MSH_' + feature]],
+                     f"/home/ghisalberti/make_datasets/MSH_reference/"
+                     f"{sat}_ref_MSH_{feature}_hourly.pkl")
+        print(f'{feature} for reference MSH is done')
 
 
 def compute_gap_to_MSH(all_data, path):
