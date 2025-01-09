@@ -120,7 +120,8 @@ def compute_fft_file(df, sat, path, files, start_index, **kwargs):
         Bt = B[t - dt / 2: t + dt / 2].Bt.values
         if len(Bt) < window_fft:
             print(
-                f"The high resolution B subdataset around {t} should contain at least {window_fft} points, but contains {len(Bt)} points.")
+                f"The high resolution B subdataset around {t} should contain at least {window_fft} points, "
+                f"but contains {len(Bt)} points.")
             fft_result = np.nan * np.ones(window_fft)
         else:
             Bt = Bt[:window_fft]
@@ -141,7 +142,7 @@ def compute_fft_file(df, sat, path, files, start_index, **kwargs):
 
 def get_info_mission_fft(sat):
     mission = get_mission(sat)
-    path = f'/DATA/ghisalberti/Datasets/{mission}/{sat}/raw/'
+    path = f'/DATA/ghisalberti/Datasets/{mission}/{sat}/searchcoil/'
     df = pd.read_pickle(f'/DATA/ghisalberti/Datasets/{mission}/{sat}/{sat}_interesting_for_BL.pkl')
     # has to be subdata / interesting data
     files = pd.read_pickle(f'/home/ghisalberti/make_datasets/B_fluctuations/{sat}_high_resolution_B_info.pkl')
