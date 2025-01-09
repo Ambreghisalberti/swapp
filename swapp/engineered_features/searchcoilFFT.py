@@ -93,3 +93,96 @@ def compute_searchcoil_fft(all_data, subdata, window_fft, searchcoil_dictionary,
 
     pd.to_pickle(all_data[['fft_searchcoil']], save_path)
     pd.to_pickle(all_data[['fft_searchcoil']], save_path[:-4] + '_copy.pkl')
+
+
+def compute_fft_mission(sat, **kwargs):
+    mission, path, files, dfs = get_info_mission_fft(sat)
+
+    for df in dfs:
+        compute_fft_file(df, mission, path, files, 0, **kwargs)
+
+
+def compute_fft_file(df, sat, path, files, start_index, **kwargs):
+    dt = kwargs.get('dt', np.timedelta64(5, 's'))
+    window_fft = kwargs.get('window_fft', 30)
+
+    start, stop = str(df.index.values[0])[:4], str(df.index.values[-1])[:4]
+
+    # Initialization
+    fft_Bt = initialize_fft(df, start_index, sat)
+    B = read_best_file(df.index.values[start_index], dt, path, files)
+
+    i = start_index
+    for i in range(start_index, len(df)):
+        t = df.index.values[i]
+        B = provide_searchcoil_file(t, dt, B, files, path)
+
+        Bt = B[t - dt / 2: t + dt / 2].Bt.values
+        if len(Bt) < window_fft:
+            print(
+                f"The high resolution B subdataset around {t} should contain at least {window_fft} points, but contains {len(Bt)} points.")
+            fft_result = np.nan * np.ones(window_fft)
+        else:
+            Bt = Bt[:window_fft]
+            fft_result = abs(fft(Bt[:window_fft])).flatten()
+        del Bt
+        assert len(fft_result) == window_fft, f"The FFT results around {t} should contain {window_fft} points."
+
+        fft_Bt.loc[t, [f'fft_{i}' for i in range(window_fft)]] = fft_result
+        fft_Bt.loc[t, 'fft_Bt'] = fft_result.sum()
+
+        if i % 5000 == 0:
+            fft_Bt.to_pickle(f'/home/ghisalberti/make_datasets/B_fluctuations/{sat}_searchcoil_fft_{start}_{stop}.pkl')
+            print(f'FFT saved, i={i}')
+
+    fft_Bt.to_pickle(f'/home/ghisalberti/make_datasets/B_fluctuations/{sat}_searchcoil_fft_{start}_{stop}.pkl')
+    print(f'FFT saved, i={i}')
+
+
+def get_info_mission_fft(sat):
+    mission = get_mission(sat)
+    path = f'/DATA/ghisalberti/Datasets/{mission}/{sat}/raw/'
+    df = pd.read_pickle(f'/DATA/ghisalberti/Datasets/{mission}/{sat}/{sat}_interesting_for_BL.pkl')
+    # has to be subdata / interesting data
+    files = pd.read_pickle(f'/home/ghisalberti/make_datasets/B_fluctuations/{sat}_high_resolution_B_info.pkl')
+    return mission, path, files, [df]
+    # If the file is too heavy, I will be able to find a way to give a list of several files instead of a merged one.
+
+
+def get_mission(sat):
+    if sat.startswith('MMS'):
+        return 'MMS'
+    elif sat.startswith('TH'):
+        return 'THEMIS'
+    else:
+        raise Exception('This mission has not been added yet in the list of missions in get_mission function.')
+
+
+def initialize_fft(df, start_index, sat):
+    if start_index == 0:
+        fft_Bt = pd.DataFrame([], index=df.index.values, columns=['fft_Bt'])
+    else:
+        fft_Bt = pd.read_pickle(f'/home/ghisalberti/make_datasets/B_fluctuations/{sat}_B_fluctuations_fft.pkl')
+    return fft_Bt
+
+
+def read_file(path, files, i):
+    sp = pd.read_pickle(path + files['files'][i])
+    B = pd.DataFrame(sp.values, index=sp.time, columns=sp.columns)
+    return B
+
+
+def read_best_file(t, dt, path, files):
+    names, starts, stops = files['files'], files['starts'], files['stops']
+    files_ok = np.logical_and(t + dt / 2 <= stops, t - dt / 2 >= starts)
+    nb_file = np.arange(len(names))[files_ok][0]
+    B = read_file(path, files, nb_file)
+    print(f'File {nb_file} downloaded')
+    return B
+
+
+def provide_searchcoil_file(t, dt, current_file, files, path):
+    current_start, current_stop = current_file.index.values[0], current_file.index.values[-1]
+    if t + dt / 2 > current_stop or t - dt / 2 < current_start:
+        current_file = read_best_file(t, dt, path, files)
+    return current_file

@@ -153,7 +153,7 @@ def get_ref_MSH_feature_over_time(apogee_times, perigee_times, df, feature, **kw
 
 
 def compute_apogees_perigees(df, sat):
-    """ This dataframe must contain R the radial distance from the satellite to the Earth."""
+    """ This dataframe must contain X, Y, Z the coordinates of the satellite relative to the Earth."""
     apogee_times = find_apogee_times(df)
     print(f'{len(apogee_times)} apogees have been found.')
     pd.to_pickle(apogee_times, f'/home/ghisalberti/make_datasets/MSH_reference/'
@@ -215,7 +215,7 @@ def normalize_flow_by_Va(all_data, path):
 
 def compute_all_ref_MSH_data(all_data, sat, path):
     """ This dataframe must contain the following columns :
-    R, Vy, Vz, Vx, Vn_MP, Vtan1_MP, Vtan2_MP, V, Np, Tpara, Tperp, Tp, logNp, logTp, anisotropy, Va """
+    X, Y, Z, Vy, Vz, Vx, Vn_MP, Vtan1_MP, Vtan2_MP, V, Np, Tpara, Tperp, Tp, logNp, logTp, anisotropy, Va """
 
     # Also saves the apogee and perigee times in pickle files,
     # and adds in all_data the columns closest_apogee and closest_perigee
