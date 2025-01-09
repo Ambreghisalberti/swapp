@@ -130,7 +130,7 @@ def read_file(path, files, i):
 def read_best_file(t, dt, path, files):
     names, starts, stops = files['files'], files['starts'], files['stops']
     files_ok = np.logical_and(t + dt / 2 <= stops, t - dt / 2 >= starts)
-    if len(files_ok) > 0:
+    if files_ok.sum() > 0:
         nb_file = np.arange(len(names))[files_ok][0]
         B = read_file(path, files, nb_file)
         print(f'File {nb_file} downloaded')
