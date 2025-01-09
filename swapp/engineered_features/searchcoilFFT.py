@@ -96,10 +96,10 @@ def compute_searchcoil_fft(all_data, subdata, window_fft, searchcoil_dictionary,
 
 
 def compute_fft_mission(sat, **kwargs):
-    mission, path, files, dfs = get_info_mission_fft(sat)
+    path, files, dfs = get_info_mission_fft(sat)
 
     for df in dfs:
-        compute_fft_file(df, mission, path, files, 0, **kwargs)
+        compute_fft_file(df, sat, path, files, 0, **kwargs)
 
 
 def compute_fft_file(df, sat, path, files, start_index, **kwargs):
@@ -118,14 +118,17 @@ def compute_fft_file(df, sat, path, files, start_index, **kwargs):
         t = df.index.values[i]
         B = provide_searchcoil_file(t, dt, B, files, path)
 
-        Bt = B[t - dt / 2: t + dt / 2].Bt.values
-        if len(Bt) < window_fft:
-            count += 1
-            fft_result = np.nan * np.ones(window_fft)
+        if B is not None:
+            Bt = B[t - dt / 2: t + dt / 2].Bt.values
+            if len(Bt) < window_fft:
+                count += 1
+                fft_result = np.nan * np.ones(window_fft)
+            else:
+                Bt = Bt[:window_fft]
+                fft_result = abs(fft(Bt[:window_fft])).flatten()
+            del Bt
         else:
-            Bt = Bt[:window_fft]
-            fft_result = abs(fft(Bt[:window_fft])).flatten()
-        del Bt
+            fft_result = np.nan * np.ones(window_fft)
         assert len(fft_result) == window_fft, f"The FFT results around {t} should contain {window_fft} points."
 
         fft_Bt.loc[t, [f'fft_{i}' for i in range(window_fft)]] = fft_result
@@ -146,7 +149,7 @@ def get_info_mission_fft(sat):
     df = pd.read_pickle(f'/DATA/ghisalberti/Datasets/{mission}/{sat}/{sat}_interesting_for_BL.pkl')
     # has to be subdata / interesting data
     files = pd.read_pickle(f'/home/ghisalberti/make_datasets/B_fluctuations/{sat}_high_resolution_B_info.pkl')
-    return mission, path, files, [df]
+    return path, files, [df]
     # If the file is too heavy, I will be able to find a way to give a list of several files instead of a merged one.
 
 
@@ -176,10 +179,13 @@ def read_file(path, files, i):
 def read_best_file(t, dt, path, files):
     names, starts, stops = files['files'], files['starts'], files['stops']
     files_ok = np.logical_and(t + dt / 2 <= stops, t - dt / 2 >= starts)
-    nb_file = np.arange(len(names))[files_ok][0]
-    B = read_file(path, files, nb_file)
-    print(f'File {nb_file} downloaded')
-    return B
+    if len(files_ok) > 0:
+        nb_file = np.arange(len(names))[files_ok][0]
+        B = read_file(path, files, nb_file)
+        print(f'File {nb_file} downloaded')
+        return B
+    else:
+        return None
 
 
 def provide_searchcoil_file(t, dt, current_file, files, path):
