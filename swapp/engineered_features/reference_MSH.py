@@ -5,14 +5,18 @@ import warnings
 
 
 def find_apogee_times(df):
-    df['R'] = np.sqrt(df.X.values ** 2 + df.Y.values ** 2 + df.Z.values ** 2)
+    df['R'] = np.sqrt(df.X.values.astype('float') ** 2 +
+                      df.Y.values.astype('float') ** 2 +
+                      df.Z.values.astype('float') ** 2)
     times = df.index.values
     apogee_times, _ = find_peaks(df.R.values, prominence=(2, None))  # Check if prominence needs to be changed
     return times[apogee_times]
 
 
 def find_perigee_times(df):
-    df['R'] = np.sqrt(df.X.values ** 2 + df.Y.values ** 2 + df.Z.values ** 2)
+    df['R'] = np.sqrt(df.X.values.astype('float') ** 2 +
+                      df.Y.values.astype('float') ** 2 +
+                      df.Z.values.astype('float') ** 2)
     times = df.index.values
     perigee_times, _ = find_peaks(-df.R.values, prominence=(2, None))  # Check if prominence needs to be changed
     return times[perigee_times]
