@@ -417,7 +417,7 @@ def fit_cold_ions(df, energies, **kwargs):
         y = df.iloc[indice][[f'spectro_{i}' for i in range(32)]].values.astype('float')
         params = fit_cold_ions_one_time(energies, y)
         df.loc[df.iloc[indice].name, columns] = params
-        if (indice % 1000 == 0) and kwargs.get('verbose', False):
+        if (indice % kwargs.get('freq_verbose', 1000) == 0) and kwargs.get('verbose', False):
             print(f'Cold ions fitted until index {indice} out of {len(df)}!')
     return df
 
