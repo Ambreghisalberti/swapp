@@ -78,6 +78,7 @@ def compute_fft_file(df, sat, path, files, start_index, **kwargs):
                 fft_result = abs(fft(Bt[:window_fft])).flatten()
             del Bt
         else:
+            count += 1
             fft_result = np.nan * np.ones(window_fft)
         assert len(fft_result) == window_fft, f"The FFT results around {t} should contain {window_fft} points."
 

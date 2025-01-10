@@ -411,16 +411,33 @@ def fit_populations(x, y, min_energy, max_energy, nb_gaussians, **kwargs):
         return np.array([max1, center1, std1, max2, center2, std2, err])
 
 
+def fit_cold_ions(df, energies, **kwargs):
+    columns = ['max_coldions', 'center_coldions', 'std_coldions']
+    for indice in range(len(df)):
+        y = df.iloc[indice][[f'spectro_{i}' for i in range(32)]].values.astype('float')
+        params = fit_cold_ions_one_time(energies, y)
+        df.loc[df.iloc[indice].name, columns] = params
+        if (indice % 1000 == 0) and kwargs.get('verbose', False):
+            print(f'Cold ions fitted until index {indice} out of {len(df)}!')
+    return df
+
+
+def fit_cold_ions_one_time(x, y, **kwargs):
+    max_cold, center_cold, std_cold, err = fit_populations(x, y, 0, 100, 1, **kwargs)
+    if (center_cold <= x[x < 100][0]) or (center_cold >= x[x < 100][-1]):
+        max_cold, center_cold, std_cold = 0, -1, -1
+    if std_cold > 100:
+        max_cold, center_cold, std_cold = 0, -1, -1
+    return max_cold, center_cold, std_cold
+
+
 def fit_sum_populations_by_energy_range(x, y, verbose=False):
     if verbose:
         fig, ax = plt.subplots(ncols=3, figsize=(15, 5))
     else:
         fig, ax = 0, [0, 0, 0]
-    max_cold, center_cold, std_cold, err = fit_populations(x, y, 0, 100, 1, verbose=verbose, fig=fig, ax=ax[0])
-    if (center_cold <= x[x < 100][0]) or (center_cold >= x[x < 100][-1]):
-        max_cold, center_cold, std_cold = 0, -1, -1
-    if std_cold > 100:
-        max_cold, center_cold, std_cold = 0, -1, -1
+
+    max_cold, center_cold, std_cold = fit_cold_ions_one_time(x, y, verbose=verbose, fig=fig, ax=ax[0])
 
     max_main, center_main, std_main, err1 = fit_populations(x, y, 80, np.max(x), 1, verbose=verbose, fig=fig, ax=ax[1])
     if verbose:
