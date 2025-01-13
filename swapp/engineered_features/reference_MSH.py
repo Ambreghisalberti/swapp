@@ -213,11 +213,14 @@ def compute_gap_to_MSH(all_data, path):
                 'Vz', 'Vtan1_MP', 'Vtan2_MP', 'Vn_MP']
 
     # Computing relative error
-    for feature in features[:-6]:
+    for feature in features:
         all_data['gap_to_MSH_' + feature] = all_data[feature].values - all_data['ref_MSH_' + feature].values
+
+    for feature in features[:-6]:
         all_data['relative_gap_with_MSH_' + feature] = abs(
             all_data['gap_to_MSH_' + feature].values / all_data['ref_MSH_' + feature].values)
-        # For features that can be null, I normalize with the positive norm instead
+
+    # For features that can be null, I normalize with the positive norm instead
     for speed in features[-6:]:
         all_data[f'relative_gap_with_MSH_{speed}'] = (all_data[speed].values - all_data[
             f'ref_MSH_{speed}'].values) / all_data.ref_MSH_V.values
