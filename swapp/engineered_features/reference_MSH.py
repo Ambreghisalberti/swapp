@@ -67,19 +67,20 @@ def get_ref_MSH_feature(time, apogee_times, perigee_times, df, feature, **kwargs
     else:
         start, stop = perigee_time, apogee_time
     temp = df[start:stop]
-    assert len(temp) > 0, "The apogee to perigee data portion is empty"
+    if len(temp) > 0 :  # The apogee to perigee data portion is not empty
+        if feature == 'Np':
+            columns = ['Np']
+        else:
+            columns = [feature, 'Np']
 
-    if feature == 'Np':
-        columns = ['Np']
+        temp = temp[columns].dropna().sort_values(by='Np')
+        temporary = temp[feature].values.flatten()
+        # temporary = temporary[~np.isnan(temporary)]
+        percentage = kwargs.get('percentage', 0.01)
+        ref_feature = np.median(temporary[-int(len(temporary) * percentage):])
+        # assert len(temp) > 0, f"{percentage * 100}% of the apogee to perigee data portion is empty"
     else:
-        columns = [feature, 'Np']
-
-    temp = temp[columns].dropna().sort_values(by='Np')
-    temporary = temp[feature].values.flatten()
-    # temporary = temporary[~np.isnan(temporary)]
-    percentage = kwargs.get('percentage', 0.01)
-    ref_feature = np.median(temporary[-int(len(temporary) * percentage):])
-    assert len(temp) > 0, f"{percentage * 100}% of the apogee to perigee data portion is empty"
+        ref_feature = np.nan
 
     return ref_feature
 
