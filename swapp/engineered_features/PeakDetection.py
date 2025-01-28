@@ -137,7 +137,7 @@ def get_pops_df(start, stop, df):
 def save_pops(start, stop, df, **kwargs):
     name = kwargs.get('name', f'{str(start)[:10]}_{str(stop)[:10]}')
     df_temp = get_pops_df(start, stop, df)
-    df_temp.to_pickle(f'/home/ghisalberti/make_datasets/detected_peaks/peaks_and_fft_{name}.pkl')
+    df_temp.to_pickle(f'/home/ghisalberti/make_datasets/detected_peaks/peaks_{name}.pkl')
     #df_temp.to_pickle(f'/home/ghisalberti/make_datasets/detected_peaks/peaks_and_fft_{name}{str(start)[:10]}_'
     #                  f'{str(stop)[:10]}.pkl')
     if kwargs.get('verbose', False):

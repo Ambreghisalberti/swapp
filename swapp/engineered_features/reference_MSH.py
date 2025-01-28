@@ -245,6 +245,7 @@ def compute_all_ref_MSH_data(all_data, sat, path):
     # Also saves the apogee and perigee times in pickle files,
     # and adds in all_data the columns closest_apogee and closest_perigee
     apogee_times, perigee_times = compute_apogees_perigees(all_data, sat)
+    all_data = all_data[all_data.R.values > 9]
     compute_ref_MSH_values(all_data, sat, path, apogee_times, perigee_times)
     compute_gap_to_MSH(all_data, path)
     normalize_flow_by_Va(all_data, path)
