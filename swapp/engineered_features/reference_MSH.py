@@ -103,41 +103,45 @@ def compute_ref_MSH_feature_v1(half_orbit_df, feature, percentage):
 
 
 def compute_ref_MSH_feature(half_orbit_df, feature, percentage):
-    assert len(half_orbit_df) > 0, "The apogee to perigee data portion is empty"
-    if (feature == 'Np') or (feature == 'Vx'):
-        columns = ['Np', 'Vx']
+    if len(half_orbit_df) > 0:   # The apogee to perigee data portion is not empty
+
+        if (feature == 'Np') or (feature == 'Vx'):
+            columns = ['Np', 'Vx']
+        else:
+            columns = [feature, 'Np', 'Vx']
+
+        half_orbit_df = half_orbit_df[columns]
+        half_orbit_df[f'ref_MSH_{feature}'] = np.nan
+
+        # Every hour median
+        hours = pd.date_range(half_orbit_df.index.values[0],
+                              half_orbit_df.index.values[-1] + np.timedelta64(1, 'h'),
+                              freq='1H')
+        for j in range(len(hours) - 1):
+            temp = half_orbit_df.loc[hours[j]:hours[j + 1], columns].dropna()
+            temp = temp[np.logical_and(temp['Np'].values > 15, temp['Vx'].values > -300)]  # probably MSH data (or BL)
+
+            if len(temp) > 200:
+                temporary = temp[feature].values
+                ref_feature = np.median(temporary)
+                half_orbit_df.loc[hours[j]:hours[j + 1], f'ref_MSH_{feature}'] = ref_feature
+
+        half_orbit_df = half_orbit_df.interpolate(method='nearest')
+        half_orbit_df = half_orbit_df.ffill()  # forward fill for the last nans in the end of the dataframe
+        half_orbit_df = half_orbit_df.bfill()  # backward fill for the first nans in the beginning of the dataframe
+
+        if len(half_orbit_df[[f'ref_MSH_{feature}']].dropna()) > 0:
+            ref_feature = half_orbit_df[f'ref_MSH_{feature}'].values
+        else:
+            half_orbit_df = half_orbit_df[columns].dropna().sort_values(by='Np')
+            ref_feature = np.nan
+            if len(half_orbit_df) > 0:
+                temporary = half_orbit_df[feature].values.flatten()
+                if int(len(temporary) * percentage) > 0:
+                    ref_feature = np.median(temporary[-int(len(temporary) * percentage):])
+
     else:
-        columns = [feature, 'Np', 'Vx']
-
-    half_orbit_df = half_orbit_df[columns]
-    half_orbit_df[f'ref_MSH_{feature}'] = np.nan
-
-    # Every hour median
-    hours = pd.date_range(half_orbit_df.index.values[0],
-                          half_orbit_df.index.values[-1] + np.timedelta64(1, 'h'),
-                          freq='1H')
-    for j in range(len(hours) - 1):
-        temp = half_orbit_df.loc[hours[j]:hours[j + 1], columns].dropna()
-        temp = temp[np.logical_and(temp['Np'].values > 15, temp['Vx'].values > -300)]  # probably MSH data (or BL)
-
-        if len(temp) > 200:
-            temporary = temp[feature].values
-            ref_feature = np.median(temporary)
-            half_orbit_df.loc[hours[j]:hours[j + 1], f'ref_MSH_{feature}'] = ref_feature
-
-    half_orbit_df = half_orbit_df.interpolate(method='nearest')
-    half_orbit_df = half_orbit_df.ffill()  # forward fill for the last nans in the end of the dataframe
-    half_orbit_df = half_orbit_df.bfill()  # backward fill for the first nans in the beginning of the dataframe
-
-    if len(half_orbit_df[[f'ref_MSH_{feature}']].dropna()) > 0:
-        ref_feature = half_orbit_df[f'ref_MSH_{feature}'].values
-    else:
-        half_orbit_df = half_orbit_df[columns].dropna().sort_values(by='Np')
         ref_feature = np.nan
-        if len(half_orbit_df) > 0:
-            temporary = half_orbit_df[feature].values.flatten()
-            if int(len(temporary) * percentage) > 0:
-                ref_feature = np.median(temporary[-int(len(temporary) * percentage):])
 
     return ref_feature
 
