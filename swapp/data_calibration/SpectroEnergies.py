@@ -47,10 +47,14 @@ def transform_to_mms_energy_channels(channels, fluxes, mms_channels, verbose=Fal
 
 
 def interpolate_spectro(product, interpolated_spectro, energies):
+    new_energies = product.axes[1].values
+    if len(new_energies.shape) == 1:
+        new_energies = [new_energies for i in range(len(product.values))]
+
     warnings.simplefilter("ignore")
     interpolated = []
     for i in range(len(product.values)):
-        spectro = transform_to_mms_energy_channels(product.axes[1].values[i], product.values[i], energies)
+        spectro = transform_to_mms_energy_channels(new_energies[i], product.values[i], energies)
         interpolated += [spectro]
     interpolated_spectro = pd.concat(
         [interpolated_spectro, pd.DataFrame(np.array(interpolated), index=product.time, columns=np.arange(32))])
