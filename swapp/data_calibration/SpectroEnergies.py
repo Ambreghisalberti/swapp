@@ -23,21 +23,22 @@ def transform_to_mms_energy_channels(channels, fluxes, mms_channels, verbose=Fal
         nb_extrapolated_over = (mms_channels > np.max(fluxes_df.channel.values)).sum()
         if nb_extrapolated_over > 0:
             mms_channels_inside = mms_channels_inside[:-nb_extrapolated_over]
-        assert len(mms_channels_inside) > 0, "All mms energies channels are outside of current energy channels range"
+        if len(mms_channels_inside) == 0:   # All mms energies channels are outside of current energy channels range"
+            spectro_energies_mms = [np.nan for _ in range(len(mms_channels))]
+        else:
+            # Interpolate
+            spectro_energies_mms = interp1d(fluxes_df.channel.values, fluxes_df.flux.values)(mms_channels_inside)
+            # Extrapolate by repeating the edge values
+            spectro_energies_mms = [spectro_energies_mms[0]] * nb_extrapolated_under + list(spectro_energies_mms)
+            spectro_energies_mms += [spectro_energies_mms[-1]] * nb_extrapolated_over
 
-        # Interpolate
-        spectro_energies_mms = interp1d(fluxes_df.channel.values, fluxes_df.flux.values)(mms_channels_inside)
-        # Extrapolate by repeating the edge values
-        spectro_energies_mms = [spectro_energies_mms[0]] * nb_extrapolated_under + list(spectro_energies_mms)
-        spectro_energies_mms += [spectro_energies_mms[-1]] * nb_extrapolated_over
-
-        if verbose:
-            plt.figure()
-            plt.plot(mms_channels, spectro_energies_mms, label='mms energies')
-            plt.plot(channels, fluxes, label='themis energies')
-            plt.legend()
-            plt.xlabel('Energies')
-            plt.ylabel('Ion flux')
+            if verbose:
+                plt.figure()
+                plt.plot(mms_channels, spectro_energies_mms, label='mms energies')
+                plt.plot(channels, fluxes, label='themis energies')
+                plt.legend()
+                plt.xlabel('Energies')
+                plt.ylabel('Ion flux')
 
     else:
         spectro_energies_mms = [np.nan for _ in range(len(mms_channels))]

@@ -285,3 +285,15 @@ def planet_env_stat_binned(feature, df, pos, **kwargs):
     fig.suptitle(title)
 
     fig.tight_layout()
+
+
+def plot_pos(pos, **kwargs):
+    ncols = 0
+    for k in ['x_slice', 'y_slice', 'z_slice']:
+        if k in kwargs:
+            ncols += 1
+    fig, ax = plt.subplots(ncols=ncols, figsize=(3*ncols, 3))
+    plot_pos_hist(pos, fig, ax, **kwargs)
+    msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
+    _, _ = planet_env.layout_earth_env(msh, figure=fig, axes=ax, x_lim=(-2, 25),
+                                       **kwargs)
