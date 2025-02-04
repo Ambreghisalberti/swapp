@@ -73,7 +73,11 @@ def download_and_interpolate_spectro(inputs):
     print(product_name + " downloading...\n")
     t1 = time.time()
 
-    product = spz.get_data(path, intervals[0][0], intervals[0][1])
+    try:
+        product = spz.get_data(path, intervals[0][0], intervals[0][1])
+    except:
+        product = None
+
     if product is not None:
         interpolated_spectro = interpolate_spectro(product, interpolated_spectro, energies)
     interpolated_spectro.to_pickle(
@@ -81,7 +85,10 @@ def download_and_interpolate_spectro(inputs):
                                                   f'{product_name}_interpolated_{start.year}_{stop.year}.pkl')
 
     for i, interval in enumerate(intervals[1:]):
-        prod = spz.get_data(path, interval[0], interval[1])
+        try:
+            prod = spz.get_data(path, interval[0], interval[1])
+        except:
+            prod = None
 
         if not (prod is None):
             interpolated_spectro = interpolate_spectro(prod, interpolated_spectro, energies)
@@ -95,3 +102,4 @@ def download_and_interpolate_spectro(inputs):
     print(product_name + f" is downloaded and interpolated in {t2 - t1} seconds!\n", flush=True)
 
     return None
+
