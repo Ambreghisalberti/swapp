@@ -3,25 +3,25 @@ from ...gradient_boosting import pred_boosting
 from .utils import *
 
 
-def intersect_MP(df, pos, omni, win_length, method, **kwargs):
+def intersect_MP(df, pos, omni, win_duration, method, **kwargs):
     if method == 'encountersMSPandMSH':
-        prepare_df_MSP_MSH_overlap(df, win_length, **kwargs)
+        prepare_df_MSP_MSH_overlap(df, win_duration, **kwargs)
     elif method == 'Shue':
-        prepare_df_close_to_MP(pos, omni, win_length, **kwargs)
+        prepare_df_close_to_MP(pos, omni, win_duration, **kwargs)
     elif method == 'both':
-        intersect_MP(df, pos, omni, win_length, 'encountersMSPandMSH', **kwargs)
-        intersect_MP(df, pos, omni, win_length, 'encountersMSPandMSH', **kwargs)
+        intersect_MP(df, pos, omni, win_duration, 'encountersMSPandMSH', **kwargs)
+        intersect_MP(df, pos, omni, win_duration, 'encountersMSPandMSH', **kwargs)
     else:
         raise Exception("To determine which make_windows are close to the magnetopause, you need to specify the criteria :"
                         "it has to be either 'encountersMSPandMSH', 'Shue' or 'both'.")
 
 
-def prepare_df_MSP_MSH_overlap(df, win_length, **kwargs):
+def prepare_df_MSP_MSH_overlap(df, win_duration, **kwargs):
     """
     These are the features of the gradient boosting. This allows to run this function even after columns were added.
     """
     df = prepare_df_MSP_MSH_overlap_pre_windowing(df)
-    df = prepare_df_MSP_MSH_overlap_windowing(df, win_length, **kwargs)
+    df = prepare_df_MSP_MSH_overlap_windowing(df, win_duration, **kwargs)
     return df
 
 
@@ -37,14 +37,14 @@ def prepare_df_MSP_MSH_overlap_pre_windowing(df, **kwargs):
     return df
 
 
-def prepare_df_MSP_MSH_overlap_windowing(df, win_length, **kwargs):
-    df = flag_msp_and_msh(df, win_length, **kwargs)
+def prepare_df_MSP_MSH_overlap_windowing(df, win_duration, **kwargs):
+    df = flag_msp_and_msh(df, win_duration, **kwargs)
     return df
 
 
-def prepare_df_close_to_MP(pos, omni, win_length, **kwargs):
+def prepare_df_close_to_MP(pos, omni, win_duration, **kwargs):
     pos = prepare_df_close_to_MP_pre_windowing(pos, omni, **kwargs)
-    pos = prepare_df_close_to_MP_windowing(pos, omni, win_length, **kwargs)
+    pos = prepare_df_close_to_MP_windowing(pos, omni, win_duration, **kwargs)
     return pos
 
 
@@ -63,9 +63,9 @@ def prepare_df_close_to_MP_pre_windowing(pos, omni, **kwargs):
     return pos
 
 
-def prepare_df_close_to_MP_windowing(pos, omni, win_length, **kwargs):
+def prepare_df_close_to_MP_windowing(pos, omni, win_duration, **kwargs):
     pos_omni = pd.concat([pos, omni], axis=1)
-    flag_around_mp(pos_omni, win_length, **kwargs)
+    flag_around_mp(pos_omni, win_duration, **kwargs)
 
     for feature in ['isCloseToMP', 'isCloseToMP_select']:
         pos[feature] = pos_omni[feature].values

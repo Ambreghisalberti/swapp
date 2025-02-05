@@ -1,9 +1,9 @@
 from .utils import *
 
 
-def prepare_df_labels(df, win_length, label_catalogues_dict, intervals, **kwargs):
+def prepare_df_labels(df, win_duration, label_catalogues_dict, intervals, **kwargs):
     df = prepare_df_labels_pre_windowing(df, label_catalogues_dict, intervals)
-    df = prepare_df_labels_windowing(df, win_length, **kwargs)
+    df = prepare_df_labels_windowing(df, win_duration, **kwargs)
     return df
 
 def prepare_df_labels_pre_windowing(df, label_catalogues_dict, intervals):
@@ -19,8 +19,8 @@ def prepare_df_labels_pre_windowing(df, label_catalogues_dict, intervals):
         print(f"Labels of {category} done.")
     return df
 
-def prepare_df_labels_windowing(df, win_length, **kwargs):
-    flag_labelled(df, win_length, **kwargs)
-    flag_contains_labelled_bl(df, win_length, **kwargs)
-    flag_count_BL_points(df, win_length, **kwargs)
+def prepare_df_labels_windowing(df, win_duration, **kwargs):
+    flag_labelled(df, win_duration, **kwargs)
+    flag_contains_labelled_bl(df, win_duration, **kwargs)
+    flag_count_BL_points(df, win_duration, **kwargs)
     return df

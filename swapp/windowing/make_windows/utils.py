@@ -79,18 +79,19 @@ def original_flag(df, win_length, flagger, type=bool):
     # so tmp.flagger["merger"] with flagger['merger'] = np.any(axis=1)
 
 
-def flag(df, win_length, flagger, stride=1, type=bool):
+def flag(df, win_duration, flagger, stride=1, type=bool):
     # step=winLength is the modulo applied to the indexes before taking the
     # window on which apply is called.
     # therefore indexes of make_windows to be evaluated are : 0, winLength, 2winLength etc.
     # window associated with index 0 is NOT COMPLETE
     # window with index winLength is the first to be complete (== have all its points defined in the series)
     tmp = df[flagger["features"]]
-    tmp = tmp.rolling(win_length, min_periods=0, step=stride).apply(flagger["fun"]).astype(type).values
+    tmp = tmp.rolling(win_duration, min_periods=0, step=stride).apply(flagger["fun"]).astype(type).values
 
     if len(flagger['features']) > 1:
         tmp = flagger['merger'](tmp)
 
+    win_length = durationToNbrPts(win_duration, time_resolution(df))
     df[flagger["name"]] = type(False)
     df.loc[df.iloc[::stride].index.values, flagger["name"]] = tmp.astype(type)
     df.loc[df.iloc[:win_length].index.values, flagger["name"]] = type(False)
@@ -121,7 +122,7 @@ def flag_for_test(df, win_length, flagger, stride=1, type=bool):
     df.iloc[:win_length, -1] = type(False)
 
 
-def flag_select(df, win_length, flagger, type=bool):
+def flag_select(df, win_duration, flagger, type=bool):
     ''' Only works for flagger function giving a boolean'''
 
     '''df[flagger["name"] + '_select'] = df[flagger["name"]].values
@@ -129,7 +130,7 @@ def flag_select(df, win_length, flagger, type=bool):
     for i in range(1, win_length):
         df.iloc[:-i, -1] = np.logical_or(df.iloc[:-i, -1].values, df.iloc[i:, -2].values)
     '''
-    df[flagger["name"] + '_select'] = df[flagger["name"]][::-1].rolling(win_length, min_periods=0).apply(
+    df[flagger["name"] + '_select'] = df[flagger["name"]][::-1].rolling(win_duration, min_periods=0).apply(
         lambda x:not(none(x))).astype(bool).values[::-1]
 
 

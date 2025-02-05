@@ -9,18 +9,18 @@ def regions(df):
     df.loc[:, 'isSW'] = (df.regions_pred.values == 2)
 
 
-def flag_msp_and_msh(df, win_length, **kwargs):
+def flag_msp_and_msh(df, win_duration, **kwargs):
     flagger = {"name": "encountersMSPandMSH", "fun": any, "features": ['isMSP', 'isMSH'],
                "merger": lambda x: np.all(x, axis=1)}
-    flag(df, win_length, flagger, **kwargs)
-    flag_select(df, win_length, flagger)
+    flag(df, win_duration, flagger, **kwargs)
+    flag_select(df, win_duration, flagger)
     return df
 
 
-def flag_sw(df, win_length, **kwargs):
+def flag_sw(df, win_duration, **kwargs):
     flagger = {"name": "encountersSW", "fun": any, "features": ['isSW']}
-    flag(df, win_length, flagger, **kwargs)
-    flag_select(df, win_length, flagger)
+    flag(df, win_duration, flagger, **kwargs)
+    flag_select(df, win_duration, flagger)
     return df
 
 
@@ -54,7 +54,7 @@ def is_around_mp(df):
                                                np.logical_not(df['below_inf_limit'].values))
 
 
-def flag_around_mp(df, win_length, **kwargs):
+def flag_around_mp(df, win_duration, **kwargs):
     flagger = {"fun": any, "name": "isCloseToMP", "features": ["is_around_mp"]}
-    flag(df, win_length, flagger, **kwargs)
-    flag_select(df, win_length, flagger)
+    flag(df, win_duration, flagger, **kwargs)
+    flag_select(df, win_duration, flagger)

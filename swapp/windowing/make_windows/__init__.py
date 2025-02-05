@@ -26,14 +26,14 @@ def prepare_df_original(data, pos, omni, win_duration, paths, labelled_days, **k
     or make_windows (full, with missing data, overlapping MSP and MSH, etc).
     Precondition : all_data has the following features : ['Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Vz', 'Tp']
     '''
-    data = prepare_dayside(data, pos, omni, win_length, **kwargs)
-    intersect_MP(data, pos, omni, win_length, 'encountersMSPandMSH', **kwargs)
+    data = prepare_dayside(data, pos, omni, win_duration, **kwargs)
+    intersect_MP(data, pos, omni, win_duration, 'encountersMSPandMSH', **kwargs)
     print('Overlap MSP/MSH done!')
-    prepare_df_missing_data(data, win_length, **kwargs)
+    prepare_df_missing_data(data, win_duration, **kwargs)
     print('Missing data done!')
-    intersect_MP(data, pos, omni, win_length, 'Shue', **kwargs)
+    intersect_MP(data, pos, omni, win_duration, 'Shue', **kwargs)
     print('Close to MP done!')
-    data = prepare_df_labels(data, win_length, paths, labelled_days, **kwargs)
+    data = prepare_df_labels(data, win_duration, paths, labelled_days, **kwargs)
     print('Labels done!')
 
     for df in (data, pos, omni):
@@ -92,7 +92,6 @@ def prepare_df_pre_windowing(data, pos, omni, label_catalogues_dict, intervals, 
 
 def prepare_df_windowing(data, pos, omni, win_duration, **kwargs):
     pos, omni, data = df_with_shared_index(pos, omni, data)
-    win_length = durationToNbrPts(win_duration, time_resolution(data))
 
     '''
     Adds to the all_data dataframe columns of interest to characterize points (predicted regions) 
@@ -100,27 +99,27 @@ def prepare_df_windowing(data, pos, omni, win_duration, **kwargs):
     Precondition : all_data has the following features : ['Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Vz', 'Tp']
     '''
     t1 = time.time()
-    data = prepare_dayside_windowing(data, pos, win_length, **kwargs)
+    data = prepare_dayside_windowing(data, pos, win_duration, **kwargs)
     t2 = time.time()
     print(f'Dayside windows prepared in {t2 - t1} seconds.')
 
     t1 = time.time()
-    data = prepare_df_MSP_MSH_overlap_windowing(data, win_length, **kwargs)
+    data = prepare_df_MSP_MSH_overlap_windowing(data, win_duration, **kwargs)
     t2 = time.time()
     print(f'MSP/MSH windows prepared in {t2 - t1} seconds.')
 
     t1 = time.time()
-    pos = prepare_df_close_to_MP_windowing(pos, omni, win_length, **kwargs)
+    pos = prepare_df_close_to_MP_windowing(pos, omni, win_duration, **kwargs)
     t2 = time.time()
     print(f'Windows close to Shue prepared in {t2 - t1} seconds.')
 
     t1 = time.time()
-    data = prepare_df_missing_data_windowing(data, win_length, **kwargs)
+    data = prepare_df_missing_data_windowing(data, win_duration, **kwargs)
     t2 = time.time()
     print(f'Missing data windows prepared in {t2 - t1} seconds.')
 
     t1 = time.time()
-    data = prepare_df_labels_windowing(data, win_length, **kwargs)
+    data = prepare_df_labels_windowing(data, win_duration, **kwargs)
     t2 = time.time()
     print(f'Labelled windows prepared in {t2 - t1} seconds.')
 

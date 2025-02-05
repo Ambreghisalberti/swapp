@@ -49,10 +49,10 @@ def is_labelled(df, intervals):
         df.loc[start:stop, 'labelled_data'] = 1
 
 
-def flag_labelled(df, win_length, **kwargs):
+def flag_labelled(df, win_duration, **kwargs):
     flagger = {"fun": all, "name": "isLabelled", "features": ["labelled_data"]}
-    flag(df, win_length, flagger, **kwargs)
-    flag_select(df, win_length, flagger)
+    flag(df, win_duration, flagger, **kwargs)
+    flag_select(df, win_duration, flagger)
 
 
 def catalogue_to_label(catalogue, df, name):
@@ -69,21 +69,21 @@ def labels(df, paths, name):
     df['label_'+name] = df['label_'+name].values * df.labelled_data.values
 
 
-def flag_contains_labelled_category(df, win_length, category, **kwargs):
+def flag_contains_labelled_category(df, win_duration, category, **kwargs):
     flagger = {"name": "containsLabelled"+category, "fun": lambda x: not (none(x)), "features": ["label_"+category]}
-    flag(df, win_length, flagger, **kwargs)
-    flag_select(df, win_length, flagger)
+    flag(df, win_duration, flagger, **kwargs)
+    flag_select(df, win_duration, flagger)
 
 
-def flag_contains_labelled_bl(df, win_length, **kwargs):
-    flag_contains_labelled_category(df, win_length, 'BL', **kwargs)
+def flag_contains_labelled_bl(df, win_duration, **kwargs):
+    flag_contains_labelled_category(df, win_duration, 'BL', **kwargs)
 
 
-def flag_count_category_points(df, win_length, category, **kwargs):
-    flag(df, win_length, {"name": "nbrLabelled"+category, "fun": lambda x: x.sum(),
+def flag_count_category_points(df, win_duration, category, **kwargs):
+    flag(df, win_duration, {"name": "nbrLabelled"+category, "fun": lambda x: x.sum(),
                           "features": ["label_"+category]}, type=int, **kwargs)
 
 
-def flag_count_BL_points(df, win_length, **kwargs):
-    flag_count_category_points(df, win_length, 'BL', **kwargs)
+def flag_count_BL_points(df, win_duration, **kwargs):
+    flag_count_category_points(df, win_duration, 'BL', **kwargs)
 
