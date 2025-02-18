@@ -109,6 +109,8 @@ def get_mission(sat):
         return 'MMS'
     elif sat.startswith('TH'):
         return 'THEMIS'
+    elif sat.startswith('C'):
+        return 'Cluster'
     else:
         raise Exception('This mission has not been added yet in the list of missions in get_mission function.')
 
