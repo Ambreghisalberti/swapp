@@ -251,7 +251,7 @@ def make_mp_grid(**kwargs):
 
 def make_data_to_grid(df, **kwargs):
     features = kwargs.get('features', list(df.columns.values))
-    data = df[features + ['X', 'Y', 'Z']].dropna()
+    data = df[np.unique(np.array(features + ['X', 'Y', 'Z']))].dropna()
     values = data[features]
     pos = data[['X', 'Y', 'Z']].values
     return pos, values
@@ -292,7 +292,7 @@ def make_maps(df, **kwargs):
 def is_map_valid(df, **kwargs):
     Xmp, Ymp, Zmp = make_mp_grid(**kwargs)
 
-    _ = kwargs.pop('features')
+    _ = kwargs.pop('features', None)
     pos, values = make_data_to_grid(df, features=['X'], **kwargs)
     interp = train_knn(pos, values, N=kwargs.get('N_neighbours', 10000))
 
