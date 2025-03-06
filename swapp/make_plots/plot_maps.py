@@ -411,7 +411,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
         else:
             valid = is_map_valid(temp, N_neighbours=N_neighbours, max_distance=max_distance)
             pd.to_pickle(valid, path)
-        plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols], valid=valid)
+        plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols], valid=valid, **kwargs)
         ax[i // ncols, i % ncols].set_title(
             f'{feature}\nfor {round(sectors_CLA[i], 2)} < CLA < {round(sectors_CLA[i + 1], 2)}\n{len(temp)} points')
         plot_CLA_sector(14, 12, 2.5, sectors_CLA[i], sectors_CLA[i + 1], ax[i // ncols, i % ncols])
