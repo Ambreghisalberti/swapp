@@ -97,7 +97,7 @@ def plot_normalized_pos(df, all_pos, **kwargs):
         fig.suptitle(kwargs['title'])
 
 
-def plot_panel(to_plot, featurex, featurey, fig, ax, bins, cmap, sigma):
+def plot_panel(to_plot, featurex, featurey, fig, ax, bins, cmap, sigma, **kwargs):
     hist, xbins, ybins, _ = ax.hist2d(to_plot[featurex].values, to_plot[featurey].values, cmin=1, bins=bins,
                                       cmap=cmap, range=[[-40, 40], [-40, 40]])
     hist = gaussian_filter_nan_datas(hist, sigma)
