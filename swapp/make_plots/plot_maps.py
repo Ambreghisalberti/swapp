@@ -49,7 +49,7 @@ def gaussian_filter_nan_datas(df, sigma):
         interpolated_arr).sum() == 0, "The Nanfilling steps have not workdes : there still are Nans in the array."
 
     # Apply the Gaussian filter to the interpolated array, and add again the initial nans
-    filtered_arr = gaussian_filter(interpolated_arr, sigma=sigma, mode='nearest', truncate=0)
+    filtered_arr = gaussian_filter(interpolated_arr, sigma, mode='nearest', truncate=0)
     filtered_arr[nan_mask] = np.nan
 
     assert np.isnan(filtered_arr).sum() == nan_mask.sum(), (
@@ -119,6 +119,7 @@ def plot_pos_hist(pos, fig, ax, **kwargs):  # Transform with the slices kwargs t
     bins = kwargs.pop('bins', 100)
     cmap = kwargs.pop('cmap', 'jet')
     sigma = kwargs.pop('sigma', 0)
+    print(sigma)
 
     i = 0
     if 'z_slice' in kwargs:
