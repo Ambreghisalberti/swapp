@@ -36,6 +36,7 @@ def gaussian_filter_nan_datas(df, sigma):
     # Interpolate the NaN values based on the surrounding values linearly
     interpolated_arr = df.copy()
     interpolated_arr[nan_mask] = griddata(points, values, (x[nan_mask], y[nan_mask]), method='linear')
+    assert np.isnan(interpolated_arr).sum() < nan_mask.sum(), "The first interpolation step adds NaNs."
 
     # Red-do a step to also fill the ones that are not surrounded by values (nearest inseatd of linear)
     nan_mask2 = np.isnan(interpolated_arr)
@@ -44,11 +45,15 @@ def gaussian_filter_nan_datas(df, sigma):
     points = np.vstack((x[valid_points], y[valid_points])).T
     values = interpolated_arr[valid_points]
     interpolated_arr[nan_mask2] = griddata(points, values, (x[nan_mask2], y[nan_mask2]), method='nearest')
+    assert np.isnan(
+        interpolated_arr).sum() == 0, "The Nanfilling steps have not workdes : there still are Nans in the array."
 
     # Apply the Gaussian filter to the interpolated array, and add again the initial nans
-    filtered_arr = gaussian_filter(interpolated_arr, sigma=sigma)
+    filtered_arr = gaussian_filter(interpolated_arr, sigma=sigma, mode='nearest', truncate=0)
     filtered_arr[nan_mask] = np.nan
 
+    assert np.isnan(filtered_arr).sum() == nan_mask.sum(), (
+        "The gaussian filter should not add ""or remove any NaN value.")
     return filtered_arr
 
 
