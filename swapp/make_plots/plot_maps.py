@@ -1,5 +1,4 @@
 from spok.models import planetary
-from swapp.windowing.plots_windows import plot_pos_hist
 import matplotlib
 from spok.coordinates.coordinates import cartesian_to_spherical, spherical_to_cartesian
 from scipy.stats import binned_statistic_2d
@@ -135,12 +134,13 @@ def plot_pos(df, **kwargs):
         if k in kwargs:
             ncols += 1
     fig, ax = plt.subplots(ncols=ncols, figsize=(3 * ncols, 3))
+    if 'title' in kwargs:
+        fig.suptitle(kwargs.pop('title'))
     plot_pos_hist(df[['X', 'Y', 'Z']].dropna(), fig, ax, **kwargs)
 
     msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
     fig, ax = planet_env.layout_earth_env(msh, figure=fig, axes=np.array([ax]), x_lim=(-2, 25), **kwargs)
-    if 'title' in kwargs:
-        fig.suptitle(kwargs['title'])
+
 
 
 def show_evolution_for_BL_depth(BL, feature, scale='linear'):
@@ -404,10 +404,43 @@ def maps_by_CLA_sector(df, feature, **kwargs):
         else:
             valid = is_map_valid(temp, N_neighbours=N_neighbours, max_distance=max_distance)
             pd.to_pickle(valid, path)
-        plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols], valid=valid, **kwargs)
+        plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols], valid=valid)
         ax[i // ncols, i % ncols].set_title(
             f'{feature}\nfor {round(sectors_CLA[i], 2)} < CLA < {round(sectors_CLA[i + 1], 2)}\n{len(temp)} points')
         plot_CLA_sector(14, 12, 2.5, sectors_CLA[i], sectors_CLA[i + 1], ax[i // ncols, i % ncols])
 
     fig.tight_layout()
     return fig, ax
+
+
+def add_speed_arrows(ax, **kwargs):
+    max_distance = kwargs.get('max_distance', 3)
+    N_neighbours = kwargs.get('N_neighbours', 500)
+    nb_sectors = kwargs.get('nb_sectors', 9)
+
+    Xmp, Ymp, Zmp = make_mp_grid(**kwargs)
+
+    sectors_CLA = np.linspace(-np.pi, np.pi, nb_sectors + 1)
+
+    nrows, ncols = ax.shape
+    for i in range(nb_sectors):
+        results_Vy = pd.read_pickle(f'/home/ghisalberti/Maps/gap_to_MSH_Vy_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
+                                    f'Nneighbours={N_neighbours}.pkl')['gap_to_MSH_Vy']
+        results_Vz = pd.read_pickle(f'/home/ghisalberti/Maps/gap_to_MSH_Vz_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
+                                    f'Nneighbours={N_neighbours}.pkl')['gap_to_MSH_Vz']
+        valid = pd.read_pickle(
+            f'/home/ghisalberti/Maps/validity_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
+            f'Nneighbours={N_neighbours}_maxdistance={max_distance}.pkl')
+        results_Vy[valid == 0] = np.nan
+        results_Vz[valid == 0] = np.nan
+
+        sub_Vy = results_Vy[::20, ::10]
+        sub_Vz = results_Vz[::20, ::10]
+        norms = np.sqrt(sub_Vy ** 2 + sub_Vz ** 2)
+        # sub_Vy = (sub_Vy/norms).flatten()
+        # sub_Vz = (sub_Vz/norms).flatten()
+        sub_Vy = sub_Vy.flatten() / np.nanmax(norms)
+        sub_Vz = sub_Vz.flatten() / np.nanmax(norms)
+
+        for y, z, vy, vz in zip(Ymp[::20, ::10].flatten(), Zmp[::20, ::10].flatten(), sub_Vy, sub_Vz):
+            ax[i // ncols, i % ncols].arrow(y, z, vy, vz, color='red', head_width=0.2)
