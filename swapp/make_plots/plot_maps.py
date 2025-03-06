@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 from spok.models.planetary import Magnetosheath
 from spok.plot import planet_env
 import matplotlib.patches as mpatches
+import pandas as pd
+import os
 
 
 def add_spherical_coordinates(df):
@@ -352,10 +354,54 @@ def arc_patch(center, radius, theta1, theta2, ax=None, resolution=50, **kwargs):
     if ax is None:
         ax = plt.gca()
     # generate the points
-    theta = np.linspace(np.radians(theta1), np.radians(theta2), resolution)
+    theta = np.linspace(theta1, theta2, resolution)
     points = np.vstack((list(radius*np.cos(theta) + center[0])+[center[0]],
                         list(radius*np.sin(theta) + center[1])+[center[1]]))
     # build the polygon and add it to the axes
     poly = mpatches.Polygon(points.T, closed=True, **kwargs)
     ax.add_patch(poly)
     return poly
+
+
+def plot_CLA_sector(cx, cy, r, theta1, theta2, ax):
+    th = np.linspace(0, 2 * np.pi, 100)
+    ax.plot(cx + r * np.cos(th), cy + r * np.sin(th), color='k', alpha=0.5)
+    arc_patch((cx, cy), r, theta1, theta2, ax=ax, fill=True, color='red', alpha=0.3)
+
+
+def maps_by_CLA_sector(df, feature, **kwargs):
+    max_distance = kwargs.get('max_distance', 3)
+    N_neighbours = kwargs.get('N_neighbours', 500)
+    nb_sectors = kwargs.get('nb_sectors', 9)
+    ncols = kwargs.get('ncols', 3)
+
+    sectors_CLA = np.linspace(-np.pi, np.pi, nb_sectors + 1)
+
+    nrows = int(np.ceil(nb_sectors / ncols))
+    fig, ax = plt.subplots(ncols=ncols, nrows=nrows, figsize=(3 * ncols, 3 * nrows))
+    for i in range(nb_sectors):
+        temp = df[df.omni_CLA.values >= sectors_CLA[i]]
+        temp = temp[temp.omni_CLA.values < sectors_CLA[i + 1]]
+
+        path = (f'/home/ghisalberti/Maps/{feature}_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
+                f'Nneighbours={N_neighbours}.pkl')
+        if os.path.isfile(path):
+            results = pd.read_pickle(path)
+        else:
+            results = make_maps(temp, features=[feature], N_neighbours=N_neighbours)
+            pd.to_pickle(results, path)
+
+        # Validity
+        path = (f'/home/ghisalberti/Maps/validity_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
+                f'Nneighbours={N_neighbours}_maxdistance={max_distance}.pkl')
+        if os.path.isfile(path):
+            valid = pd.read_pickle(path)
+        else:
+            valid = is_map_valid(temp, N_neighbours=N_neighbours, max_distance=max_distance)
+            pd.to_pickle(valid, path)
+        plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols], valid=valid)
+        ax[i // ncols, i % ncols].set_title(
+            f'{feature}\nfor {round(sectors_CLA[i], 2)} < CLA < {round(sectors_CLA[i + 1], 2)}\n{len(temp)} points')
+        plot_CLA_sector(14, 12, 2.5, sectors_CLA[i], sectors_CLA[i + 1], ax[i // ncols, i % ncols])
+
+    fig.tight_layout()
