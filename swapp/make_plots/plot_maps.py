@@ -65,6 +65,8 @@ def plot_normalized_pannel(df, all_pos, featurex, featurey, fig, ax, bins, sigma
     stat2[np.isnan(stat2)] = 0
 
     ratio = stat2.T / stat.T
+    ratio[ratio == np.float64('inf')] = np.nan
+    ratio[ratio == -np.float64('inf')] = np.nan
     ratio = gaussian_filter_nan_datas(ratio, sigma)
     im = ax.pcolormesh(xbins, ybins, ratio, cmap=cmap)
     fig.colorbar(im, ax=ax)
