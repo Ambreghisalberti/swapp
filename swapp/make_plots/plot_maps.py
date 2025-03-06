@@ -14,6 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from spok.models.planetary import Magnetosheath
 from spok.plot import planet_env
+import matplotlib.patches as mpatches
 
 
 def add_spherical_coordinates(df):
@@ -323,6 +324,7 @@ def plot_maps(interpolated_features, **kwargs):
         ax = np.array([ax])
     if len(ax.shape) == 1:
         ax = np.array([ax])
+    nrows, ncols = ax.shape
 
     msh = Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
     for i, feature in enumerate(features):
@@ -343,3 +345,17 @@ def compute_and_plot_map(df, **kwargs):
     valid = is_map_valid(df, **kwargs)
     plot_maps(results, valid=valid, **kwargs)
     return results, valid
+
+
+def arc_patch(center, radius, theta1, theta2, ax=None, resolution=50, **kwargs):  # Adapted from stack overflow
+    # make sure ax is not empty
+    if ax is None:
+        ax = plt.gca()
+    # generate the points
+    theta = np.linspace(np.radians(theta1), np.radians(theta2), resolution)
+    points = np.vstack((list(radius*np.cos(theta) + center[0])+[center[0]],
+                        list(radius*np.sin(theta) + center[1])+[center[1]]))
+    # build the polygon and add it to the axes
+    poly = mpatches.Polygon(points.T, closed=True, **kwargs)
+    ax.add_patch(poly)
+    return poly
