@@ -333,7 +333,12 @@ def plot_maps(interpolated_features, **kwargs):
         to_plot = interpolated_features[feature].copy()
         to_plot[valid == 0] = np.nan
         ax[i // ncols, i % ncols].set_title(feature)
-        im = ax[i // ncols, i % ncols].pcolormesh(Ymp, Zmp, to_plot)
+        kwargsplot = {'cmap': kwargs.get('cmap')}
+        if kwargs.get('cmap') == 'seismic':
+            kwargsplot['vmax'] = abs(np.nanmax(to_plot))
+            kwargsplot['vmin'] = -abs(np.nanmax(to_plot))
+
+        im = ax[i // ncols, i % ncols].pcolormesh(Ymp, Zmp, to_plot, **kwargsplot)
         plt.colorbar(im, ax=ax[i // ncols, i % ncols])
 
         fig, ax[i // ncols, i % ncols] = planet_env.layout_earth_env(msh, figure=fig,
@@ -399,9 +404,10 @@ def maps_by_CLA_sector(df, feature, **kwargs):
         else:
             valid = is_map_valid(temp, N_neighbours=N_neighbours, max_distance=max_distance)
             pd.to_pickle(valid, path)
-        plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols], valid=valid)
+        plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols], valid=valid, **kwargs)
         ax[i // ncols, i % ncols].set_title(
             f'{feature}\nfor {round(sectors_CLA[i], 2)} < CLA < {round(sectors_CLA[i + 1], 2)}\n{len(temp)} points')
         plot_CLA_sector(14, 12, 2.5, sectors_CLA[i], sectors_CLA[i + 1], ax[i // ncols, i % ncols])
 
     fig.tight_layout()
+    return fig, ax
