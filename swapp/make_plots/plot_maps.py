@@ -259,7 +259,7 @@ def make_mp_grid(**kwargs):
         msh = Magnetosheath()
         Xmp, Ymp, Zmp = msh.magnetopause(theta, phi)
     elif coord == 'cartesian':
-        N_grid = 300
+        N_grid = 600
         th = np.linspace(0, 0.5 * np.pi, 3000)
         ph = np.linspace(-np.pi, np.pi, 3000)
         theta, phi = np.meshgrid(th, ph)
@@ -444,7 +444,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
     return fig, ax
 
 
-def add_speed_arrows(ax, **kwargs):
+def add_speed_arrows(ax, length_arrow=1, **kwargs):
     max_distance = kwargs.get('max_distance', 3)
     N_neighbours = kwargs.get('N_neighbours', 500)
     nb_sectors = kwargs.get('nb_sectors', 9)
@@ -466,13 +466,17 @@ def add_speed_arrows(ax, **kwargs):
         results_Vy[valid == 0] = np.nan
         results_Vz[valid == 0] = np.nan
 
-        sub_Vy = results_Vy[::20, ::10]
-        sub_Vz = results_Vz[::20, ::10]
-        norms = np.sqrt(sub_Vy ** 2 + sub_Vz ** 2)
+        if coord == 'spherical':
+            nb_hop = 20
+        else:
+            nb_hop = 1
+        sub_Vy = results_Vy[::nb_hop, ::nb_hop]
+        sub_Vz = results_Vz[::nb_hop, ::nb_hop]
+        norms = np.sqrt(sub_Vy ** 2 + sub_Vz ** 2)/length_arrow
         # sub_Vy = (sub_Vy/norms).flatten()
         # sub_Vz = (sub_Vz/norms).flatten()
         sub_Vy = sub_Vy.flatten() / np.nanmax(norms)
         sub_Vz = sub_Vz.flatten() / np.nanmax(norms)
 
-        for y, z, vy, vz in zip(Ymp[::20, ::10].flatten(), Zmp[::20, ::10].flatten(), sub_Vy, sub_Vz):
+        for y, z, vy, vz in zip(Ymp[::nb_hop, ::nb_hop].flatten(), Zmp[::nb_hop, ::nb_hop].flatten(), sub_Vy, sub_Vz):
             ax[i // ncols, i % ncols].arrow(y, z, vy, vz, color='red', head_width=0.2)
