@@ -466,10 +466,8 @@ def add_speed_arrows(ax, length_arrow=1, **kwargs):
         results_Vy[valid == 0] = np.nan
         results_Vz[valid == 0] = np.nan
 
-        if coord == 'spherical':
-            nb_hop = 20
-        else:
-            nb_hop = 1
+        nb_hop = kwargs.get('nb_hop', 20)
+
         sub_Vy = results_Vy[::nb_hop, ::nb_hop]
         sub_Vz = results_Vz[::nb_hop, ::nb_hop]
         norms = np.sqrt(sub_Vy ** 2 + sub_Vz ** 2)/length_arrow
