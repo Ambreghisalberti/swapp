@@ -352,12 +352,13 @@ def plot_maps(interpolated_features, **kwargs):
                                                                      axes=np.array([ax[i // ncols, i % ncols]]),
                                                                      y_lim=(-17, 17), z_lim=(-15, 15), x_slice=0)
     fig.tight_layout()
+    return fig, ax
 
 
 def compute_and_plot_map(df, **kwargs):
     results = make_maps(df, **kwargs)
     valid = is_map_valid(df, **kwargs)
-    plot_maps(results, valid=valid, **kwargs)
+    _,_ = plot_maps(results, valid=valid, **kwargs)
     return results, valid
 
 
@@ -411,7 +412,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
         else:
             valid = is_map_valid(temp, N_neighbours=N_neighbours, max_distance=max_distance)
             pd.to_pickle(valid, path)
-        plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols], valid=valid, **kwargs)
+        fig, ax[i // ncols, i % ncols] = plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols], valid=valid, **kwargs)
         ax[i // ncols, i % ncols].set_title(
             f'{feature}\nfor {round(sectors_CLA[i], 2)} < CLA < {round(sectors_CLA[i + 1], 2)}\n{len(temp)} points')
         plot_CLA_sector(14, 12, 2.5, sectors_CLA[i], sectors_CLA[i + 1], ax[i // ncols, i % ncols])
