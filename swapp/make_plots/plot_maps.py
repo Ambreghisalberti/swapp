@@ -259,9 +259,21 @@ def make_mp_grid(**kwargs):
         msh = Magnetosheath()
         Xmp, Ymp, Zmp = msh.magnetopause(theta, phi)
     elif coord == 'cartesian':
-        Xmp = None
-        Ymp = np.linspace(-15,15,N_grid)
-        Zmp = np.linspace(-15,15,N_grid)
+        N_grid = 300
+        th = np.linspace(0, 0.5 * np.pi, 3000)
+        ph = np.linspace(-np.pi, np.pi, 3000)
+        theta, phi = np.meshgrid(th, ph)
+        msh = Magnetosheath()
+        X, Y, Z = msh.magnetopause(theta, phi)
+        X, Y, Z = X.flatten(), Y.flatten(), Z.flatten()
+        Ymp = np.linspace(-15, 15, N_grid)
+        Zmp = np.linspace(-15, 15, N_grid)
+        Ymp, Zmp = np.meshgrid(Ymp, Zmp)
+        Ymp, Zmp = Ymp.flatten(), Zmp.flatten()
+
+        model = KNeighborsRegressor(n_neighbors=1, weights='distance', n_jobs=1)
+        model.fit(np.array([Y,Z]).T, X)
+        Xmp = model.predict(np.array([Ymp, Zmp]).T)
 
     return Xmp, Ymp, Zmp
 
