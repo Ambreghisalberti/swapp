@@ -251,11 +251,18 @@ def plot_repositionned_stat_binned(df, feature, **kwargs):
 
 def make_mp_grid(**kwargs):
     N_grid = kwargs.get('N_grid', 300)
-    th = np.linspace(0, 0.5 * np.pi, N_grid)
-    ph = np.linspace(-np.pi, np.pi, 2 * N_grid)
-    theta, phi = np.meshgrid(th, ph)
-    msh = Magnetosheath()
-    Xmp, Ymp, Zmp = msh.magnetopause(theta, phi)
+    coord = kwargs.get('coord','spherical')
+    if coord == 'spherical':
+        th = np.linspace(0, 0.5 * np.pi, N_grid)
+        ph = np.linspace(-np.pi, np.pi, 2 * N_grid)
+        theta, phi = np.meshgrid(th, ph)
+        msh = Magnetosheath()
+        Xmp, Ymp, Zmp = msh.magnetopause(theta, phi)
+    elif coord == 'cartesian':
+        Xmp = None
+        Ymp = np.linspace(-15,15,N_grid)
+        Zmp = np.linspace(-15,15,N_grid)
+
     return Xmp, Ymp, Zmp
 
 
@@ -387,6 +394,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
     N_neighbours = kwargs.get('N_neighbours', 500)
     nb_sectors = kwargs.get('nb_sectors', 9)
     ncols = kwargs.get('ncols', 3)
+    coord = kwargs.get('coord', 'spherical')
 
     sectors_CLA = np.linspace(-np.pi, np.pi, nb_sectors + 1)
 
@@ -397,7 +405,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
         temp = temp[temp.omni_CLA.values < sectors_CLA[i + 1]]
 
         path = (f'/home/ghisalberti/Maps/{feature}_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
-                f'Nneighbours={N_neighbours}.pkl')
+                f'Nneighbours={N_neighbours}_coord={coord}.pkl')
         if os.path.isfile(path):
             results = pd.read_pickle(path)
         else:
@@ -406,7 +414,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
 
         # Validity
         path = (f'/home/ghisalberti/Maps/validity_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
-                f'Nneighbours={N_neighbours}_maxdistance={max_distance}.pkl')
+                f'Nneighbours={N_neighbours}_maxdistance={max_distance}_coord={coord}.pkl')
         if os.path.isfile(path):
             valid = pd.read_pickle(path)
         else:
@@ -425,6 +433,7 @@ def add_speed_arrows(ax, **kwargs):
     max_distance = kwargs.get('max_distance', 3)
     N_neighbours = kwargs.get('N_neighbours', 500)
     nb_sectors = kwargs.get('nb_sectors', 9)
+    coord = kwargs.get('coord', 'spherical')
 
     Xmp, Ymp, Zmp = make_mp_grid(**kwargs)
 
@@ -433,12 +442,12 @@ def add_speed_arrows(ax, **kwargs):
     nrows, ncols = ax.shape
     for i in range(nb_sectors):
         results_Vy = pd.read_pickle(f'/home/ghisalberti/Maps/gap_to_MSH_Vy_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
-                                    f'Nneighbours={N_neighbours}.pkl')['gap_to_MSH_Vy']
+                                    f'Nneighbours={N_neighbours}_coord={coord}.pkl')['gap_to_MSH_Vy']
         results_Vz = pd.read_pickle(f'/home/ghisalberti/Maps/gap_to_MSH_Vz_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
-                                    f'Nneighbours={N_neighbours}.pkl')['gap_to_MSH_Vz']
+                                    f'Nneighbours={N_neighbours}_coord={coord}.pkl')['gap_to_MSH_Vz']
         valid = pd.read_pickle(
             f'/home/ghisalberti/Maps/validity_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
-            f'Nneighbours={N_neighbours}_maxdistance={max_distance}.pkl')
+            f'Nneighbours={N_neighbours}_maxdistance={max_distance}_coord={coord}.pkl')
         results_Vy[valid == 0] = np.nan
         results_Vz[valid == 0] = np.nan
 
