@@ -274,6 +274,9 @@ def make_mp_grid(**kwargs):
         model = KNeighborsRegressor(n_neighbors=1, weights='distance', n_jobs=1)
         model.fit(np.array([Y,Z]).T, X)
         Xmp = model.predict(np.array([Ymp, Zmp]).T)
+        Xmp = Xmp.reshape((N_grid,N_grid))
+        Ymp = Ymp.reshape((N_grid,N_grid))
+        Zmp = Zmp.reshape((N_grid,N_grid))
 
     return Xmp, Ymp, Zmp
 
