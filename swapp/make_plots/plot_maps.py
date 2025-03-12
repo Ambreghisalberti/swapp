@@ -85,7 +85,13 @@ def plot_relative_diff_pannel(df, all_pos, featurex, featurey, fig, bins, sigma,
     relative_diff[relative_diff == np.float64('inf')] = np.nan
     relative_diff[relative_diff == -np.float64('inf')] = np.nan
     relative_diff = gaussian_filter_nan_datas(relative_diff, sigma)
-    im = ax.pcolormesh(xbins, ybins, relative_diff, cmap=cmap)
+    if cmap == 'seismic':
+        vmin = -np.nanmax(abs(relative_diff))
+        vmax = np.nanmax(abs(relative_diff))
+    else:
+        vmin = np.nanmin(relative_diff)
+        vmax = np.nanmax(relative_diff)
+    im = ax.pcolormesh(xbins, ybins, relative_diff, cmap=cmap, vmin=vmin, vmax=vmax)
     fig.colorbar(im, ax=ax)
 
 
