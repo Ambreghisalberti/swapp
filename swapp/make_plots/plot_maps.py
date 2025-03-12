@@ -82,7 +82,7 @@ def plot_relative_diff_pannel(df, all_pos, featurex, featurey, fig, bins, sigma,
     stat2[np.isnan(stat2)] = 0
     stat = stat.T/stat.sum()
     stat2 = stat2.T/stat2.sum()
-    
+
     relative_diff = 2*(stat2.T - stat.T)/ (stat.T + stat2.T)
     relative_diff[relative_diff == np.float64('inf')] = np.nan
     relative_diff[relative_diff == -np.float64('inf')] = np.nan
@@ -489,7 +489,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
         else:
             valid = is_map_valid(temp, N_neighbours=N_neighbours, max_distance=max_distance)
             pd.to_pickle(valid, path)
-        fig, ax[i // ncols, i % ncols] = plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols], valid=valid, **kwargs)
+        _,_ = plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols], valid=valid, **kwargs)
         ax[i // ncols, i % ncols].set_title(
             f'{feature}\nfor {round(sectors_CLA[i], 2)} < CLA < {round(sectors_CLA[i + 1], 2)}\n{len(temp)} points')
         plot_CLA_sector(14, 12, 2.5, sectors_CLA[i], sectors_CLA[i + 1], ax[i // ncols, i % ncols])
