@@ -126,17 +126,20 @@ def plot_pos(df, **kwargs):
     bins = kwargs.pop('bins', 100)
     cmap = kwargs.pop('cmap', 'jet')
 
-    inputs = (df, df2, 'X', 'Y', fig, bins, kwargs.get('sigma', 0), cmap)
-    f, inputs = get_plot_panel_info(method, inputs)
-
     i = 0
     if 'z_slice' in kwargs:
+        inputs = (df, df2, 'X', 'Y', fig, bins, kwargs.get('sigma', 0), cmap)
+        f, inputs = get_plot_panel_info(method, inputs)
         f(*inputs, ax[i])
         i += 1
     if 'y_slice' in kwargs:
+        inputs = (df, df2, 'X', 'Z', fig, bins, kwargs.get('sigma', 0), cmap)
+        f, inputs = get_plot_panel_info(method, inputs)
         f(*inputs, ax[i])
         i += 1
     if 'x_slice' in kwargs:
+        inputs = (df, df2, 'Y', 'Z', fig, bins, kwargs.get('sigma', 0), cmap)
+        f, inputs = get_plot_panel_info(method, inputs)
         f(*inputs, ax[i])
         i += 1
 
