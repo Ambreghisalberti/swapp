@@ -146,7 +146,7 @@ def plot_pos(df, **kwargs):
         fig.suptitle(kwargs['title'])
 
 
-def plot_panel(to_plot, featurex, featurey, fig, bins, cmap, sigma, ax, **kwargs):
+def plot_panel(to_plot, featurex, featurey, fig, bins, sigma, cmap, ax, **kwargs):
     hist, xbins, ybins, _ = ax.hist2d(to_plot[featurex].values, to_plot[featurey].values, cmin=1, bins=bins,
                                       cmap=cmap, range=[[-40, 40], [-40, 40]])
     hist = gaussian_filter_nan_datas(hist, sigma)
@@ -166,13 +166,13 @@ def plot_pos_hist(pos, fig, ax, **kwargs):  # Transform with the slices kwargs t
 
     i = 0
     if 'z_slice' in kwargs:
-        plot_panel(to_plot, 'X', 'Y', fig, bins, cmap, sigma, ax[i], **kwargs)
+        plot_panel(to_plot, 'X', 'Y', fig, bins, sigma, cmap, ax[i], **kwargs)
         i += 1
     if 'y_slice' in kwargs:
-        plot_panel(to_plot, 'X', 'Z', fig, bins, cmap, sigma, ax[i], **kwargs)
+        plot_panel(to_plot, 'X', 'Z', fig, bins, sigma, cmap, ax[i], **kwargs)
         i += 1
     if 'x_slice' in kwargs:
-        plot_panel(to_plot, 'Y', 'Z', fig, bins, cmap, sigma, ax[i], **kwargs)
+        plot_panel(to_plot, 'Y', 'Z', fig, bins, sigma, cmap, ax[i], **kwargs)
         i += 1
     plt.tight_layout()
 
