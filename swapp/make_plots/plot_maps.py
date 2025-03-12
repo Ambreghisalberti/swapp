@@ -131,13 +131,13 @@ def plot_pos(df, **kwargs):
 
     i = 0
     if 'z_slice' in kwargs:
-        f(inputs, ax[i])
+        f(*inputs, ax[i])
         i += 1
     if 'y_slice' in kwargs:
-        f(inputs, ax[i])
+        f(*inputs, ax[i])
         i += 1
     if 'x_slice' in kwargs:
-        f(inputs, ax[i])
+        f(*inputs, ax[i])
         i += 1
 
     msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
