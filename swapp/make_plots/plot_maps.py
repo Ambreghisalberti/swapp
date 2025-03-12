@@ -80,7 +80,9 @@ def plot_relative_diff_pannel(df, all_pos, featurex, featurey, fig, bins, sigma,
                                                  bins=(xbins, ybins), statistic='count')
     stat[np.isnan(stat)] = 0
     stat2[np.isnan(stat2)] = 0
-
+    stat = stat.T/stat.sum()
+    stat2 = stat2.T/stat2.sum()
+    
     relative_diff = 2*(stat2.T - stat.T)/ (stat.T + stat2.T)
     relative_diff[relative_diff == np.float64('inf')] = np.nan
     relative_diff[relative_diff == -np.float64('inf')] = np.nan
