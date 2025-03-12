@@ -73,7 +73,23 @@ def plot_normalized_pannel(df, all_pos, featurex, featurey, fig, ax, bins, sigma
     fig.colorbar(im, ax=ax)
 
 
-def plot_normalized_pos(df, all_pos, **kwargs):
+def plot_relative_diff_pannel(df, all_pos, featurex, featurey, fig, ax, bins, sigma, cmap):
+    stat, xbins, ybins, _ = binned_statistic_2d(all_pos[featurex].values, all_pos[featurey].values,
+                                                all_pos[featurex].values, statistic='count', bins=bins)
+    stat2, xbins, ybins, _ = binned_statistic_2d(df[featurex].values, df[featurey].values, df[featurey].values,
+                                                 bins=(xbins, ybins), statistic='count')
+    stat[np.isnan(stat)] = 0
+    stat2[np.isnan(stat2)] = 0
+
+    relative_diff = 2*(stat2.T - stat.T)/ (stat.T + stat2.T)
+    relative_diff[relative_diff == np.float64('inf')] = np.nan
+    relative_diff[relative_diff == -np.float64('inf')] = np.nan
+    relative_diff = gaussian_filter_nan_datas(relative_diff, sigma)
+    im = ax.pcolormesh(xbins, ybins, relative_diff, cmap=cmap)
+    fig.colorbar(im, ax=ax)
+
+
+def plot_pos(df, all_pos, **kwargs):
     ncols = 0
     for k in ['x_slice', 'y_slice', 'z_slice']:
         if k in kwargs:
@@ -88,15 +104,25 @@ def plot_normalized_pos(df, all_pos, **kwargs):
     bins = kwargs.pop('bins', 100)
     cmap = kwargs.pop('cmap', 'jet')
 
+    method = kwargs.get('method','normal')
+    if method == 'normal':
+        f = plot_panel
+    elif method == 'normalized':
+        f = plot_normalized_pannel
+    elif method == 'relative diff':
+        f = plot_relative_diff_pannel
+    else:
+        raise Exception("The method given as input is not known.")
+
     i = 0
     if 'z_slice' in kwargs:
-        plot_normalized_pannel(df, all_pos, 'X', 'Y', fig, ax[i], bins, kwargs.get('sigma', 0), cmap)
+        f(df, all_pos, 'X', 'Y', fig, ax[i], bins, kwargs.get('sigma', 0), cmap)
         i += 1
     if 'y_slice' in kwargs:
-        plot_normalized_pannel(df, all_pos, 'X', 'Z', fig, ax[i], bins, kwargs.get('sigma', 0), cmap)
+        f(df, all_pos, 'X', 'Z', fig, ax[i], bins, kwargs.get('sigma', 0), cmap)
         i += 1
     if 'x_slice' in kwargs:
-        plot_normalized_pannel(df, all_pos, 'Y', 'Z', fig, ax[i], bins, kwargs.get('sigma', 0), cmap)
+        f(df, all_pos, 'Y', 'Z', fig, ax[i], bins, kwargs.get('sigma', 0), cmap)
         i += 1
 
     msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
@@ -136,6 +162,7 @@ def plot_pos_hist(pos, fig, ax, **kwargs):  # Transform with the slices kwargs t
     plt.tight_layout()
 
 
+"""
 def plot_pos(df, **kwargs):
     ncols = 0
     for k in ['x_slice', 'y_slice', 'z_slice']:
@@ -148,7 +175,7 @@ def plot_pos(df, **kwargs):
 
     msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
     fig, ax = planet_env.layout_earth_env(msh, figure=fig, axes=np.array([ax]), x_lim=(-2, 25), **kwargs)
-
+"""
 
 
 def show_evolution_for_BL_depth(BL, feature, scale='linear'):
