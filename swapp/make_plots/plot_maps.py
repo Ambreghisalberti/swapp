@@ -16,6 +16,7 @@ from spok.plot import planet_env
 import matplotlib.patches as mpatches
 import pandas as pd
 import os
+from datetime import timedelta
 
 
 def add_spherical_coordinates(df):
@@ -478,3 +479,24 @@ def add_speed_arrows(ax, length_arrow=1, **kwargs):
 
         for y, z, vy, vz in zip(Ymp[::nb_hop, ::nb_hop].flatten(), Zmp[::nb_hop, ::nb_hop].flatten(), sub_Vy, sub_Vz):
             ax[i // ncols, i % ncols].arrow(y, z, vy, vz, color='red', head_width=0.2)
+
+
+def associate_SW_Safrankova(X_sat, omni, BS_standoff, dtm=0, sampling_time='5S', vx_median=-406.2):
+    if dtm != 0:
+        # vxmean = abs(omni.Vx.rolling(dt,min_periods=1).mean())
+        vxmean = abs(omni.Vx.rolling(int((2*dtm+1)*timedelta(minutes=1)/(omni.index[-1]-omni.index[-2])),
+                                     center=True, min_periods=1).mean())
+    else:
+        vxmean = abs(omni.Vx)
+    BS_x0 = BS_standoff[BS_standoff.index.isin(X_sat.index)]
+    BS_x0 = BS_x0.fillna(13.45)
+    lag = np.array(np.round((BS_x0.values-X_sat.values)*6371/vx_median),dtype='timedelta64[s]')
+    time = (X_sat.index-lag).round(sampling_time)
+    vx = pd.Series(name='Vx',dtype=float)
+    vx = pd.concat([vx, vxmean.loc[time]]).fillna(abs(vx_median)).values
+    lag = np.array(np.round((BS_x0.values.flatten()-X_sat.values.flatten())*6371/vx),dtype='timedelta64[s]')
+    time = (X_sat.index-lag).round(sampling_time)
+    OMNI = pd.DataFrame(columns=omni.columns)
+    OMNI = pd.concat([OMNI, omni.loc[time]])
+    OMNI.index = X_sat.index
+    return OMNI
