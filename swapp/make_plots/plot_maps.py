@@ -541,6 +541,8 @@ def maps_by_CLA_sector(df, feature, **kwargs):
 
     nrows = int(np.ceil(nb_sectors / ncols))
     fig, ax = plt.subplots(ncols=ncols, nrows=nrows, figsize=(3 * ncols, 3 * nrows))
+    if len(ax.shape)==1:
+        ax = np.array([ax])
     for i in range(nb_sectors):
         temp = df[df.omni_CLA.values >= sectors_CLA[i]]
         temp = temp[temp.omni_CLA.values < sectors_CLA[i + 1]]
