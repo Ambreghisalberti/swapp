@@ -1,7 +1,7 @@
 from spok.models import planetary
 import matplotlib
 from spok.coordinates.coordinates import cartesian_to_spherical, spherical_to_cartesian
-from scipy.stats import binned_statistic_2d
+from scipy.stats import binned_statistic_2d, binned_statistic
 from scipy.ndimage import gaussian_filter
 from scipy.interpolate import griddata
 from swapp.make_plots.plot_functions import make_bins
@@ -204,20 +204,49 @@ def plot_pos(df, **kwargs):
 """
 
 
-def show_evolution_for_BL_depth(BL, feature, scale='linear'):
-    plt.figure()
-    bins = make_bins(scale, BL[[feature]].dropna(), feature, nb_bins=200)
-    _ = plt.hist2d(BL.dropna().normalized_logNoverT.values, BL.dropna()[feature].values.flatten(),
-                   bins=(np.linspace(-0.2, 1.2, 200), bins), cmin=1)
-    plt.xlim((-0.2, 1.2))
+def median_curve_transition_param(temp, feature):
+    stat, xbins, im = binned_statistic(temp.normalized_logNoverT.values, temp[feature].values, statistic='median',
+                                       bins=1000)
+    stat_count, xbins, im = binned_statistic(temp.normalized_logNoverT.values, temp[feature].values, statistic='count',
+                                             bins=1000)
+
+    fig, ax = plt.subplots(ncols=2, figsize=(8, 4))
+
+    ax[0].plot(xbins[:-1], gaussian_filter(stat, 3))
+    ax[0].set_xlabel('Transition parameter')
+    ax[0].set_ylabel(r'$\frac{|\overrightarrow{V_{MSH}} - \overrightarrow{V}|}{V_{MSH}}$', rotation='horizontal')
+    ax[0].yaxis.set_label_coords(-0.23, 0.5)
+    plt.xticks([0, 1], ['MSP', 'MSH'])
+
+    ax[1].plot(xbins[:-1], gaussian_filter(stat_count, 3))
+    ax[1].set_xlabel('Transition parameter')
+    ax[1].set_ylabel('Count')
+    plt.xticks([0, 1], ['MSP', 'MSH'])
+
+    fig.tight_layout()
+    return fig, ax
+
+
+def hist_transition_param(temp, feature, scale='linear'):
+    bins = make_bins(scale, temp[[feature]].dropna(), feature, nb_bins=200)
+    stat, xbins, ybins, im = binned_statistic_2d(temp.normalized_logNoverT.values, temp[feature].values,
+                                                 temp.normalized_logNoverT.values, statistic='count',
+                                                 bins=(np.linspace(0, 1, 100), bins))
+    stat[stat == 0] = np.nan
+    stat = gaussian_filter_nan_datas(stat, 1)
+
+    fig, ax = plt.subplots()
+    im = plt.pcolormesh(xbins, ybins, stat.T, cmap='jet')
+    plt.colorbar(im)
+    ax.set_xlabel('Transition parameter')
+    ax.set_ylabel(feature)
+    ax.yaxis.set_label_coords(-0.23, 0.5)
+    plt.xticks([0, 1], ['MSP', 'MSH'])
+    plt.title(f'Distribution of {feature} accross the Boundary layer depth')
     plt.yscale(scale)
-    plt.xlabel('Transition parameter')
-    plt.ylabel(feature)
-    plt.axvline(0, color='r', linestyle='--', linewidth=5)
-    plt.axvline(1, color='r', linestyle='--', linewidth=5)
-    plt.colorbar()
-    plt.xticks(ticks=[0, 1], labels=['MSP','MSH'])
-    plt.tight_layout()
+
+    fig.tight_layout()
+    return fig, ax
 
 
 def reposition(df, **kwargs):
@@ -455,9 +484,52 @@ def arc_patch(center, radius, theta1, theta2, ax=None, resolution=50, **kwargs):
 def plot_CLA_sector(cx, cy, r, theta1, theta2, ax):
     th = np.linspace(0, 2 * np.pi, 100)
     ax.plot(cx + r * np.cos(th), cy + r * np.sin(th), color='k', alpha=0.5)
-    arc_patch((cx, cy), r, theta1, theta2, ax=ax, fill=True, color='red', alpha=0.3)
+    arc_patch((cx, cy), r, (np.pi/2-theta2), (np.pi/2-theta1), ax=ax, fill=True, color='red', alpha=0.3)
 
 
+def hist_by_CLA(BL, feature, **kwargs):
+    if 'sectors' in kwargs:
+        sectors_CLA = kwargs['sectors']
+        nb_sectors = len(sectors_CLA) - 1
+    else:
+        nb_sectors = kwargs.get('nb_sectors', 9)
+        sectors_CLA = np.linspace(-np.pi, np.pi, nb_sectors + 1)
+
+    ncols = kwargs.get('ncols', 3)
+    cmap = kwargs.get('cmap', 'jet')
+
+    msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
+
+    nrows = int(np.ceil(nb_sectors / ncols))
+    fig, ax = plt.subplots(ncols=ncols, nrows=nrows, figsize=(3 * ncols, 3 * nrows))
+    if len(ax.shape) == 1:
+        ax = np.array([ax])
+    for i in range(nb_sectors):
+        temp = BL[BL.omni_CLA.values >= sectors_CLA[i]]
+        temp = temp[temp.omni_CLA.values < sectors_CLA[i + 1]]
+
+        stat, xbins, ybins, im = binned_statistic_2d(temp.Y.values, temp.Z.values, temp[feature].values,
+                                                     statistic='mean', bins=kwargs.get('bins', 50))
+        stat = gaussian_filter_nan_datas(stat, 1)
+
+        if cmap == 'seismic':
+            vmin, vmax = -np.nanmax(abs(stat)), np.nanmax(abs(stat))
+        else:
+            vmin, vmax = np.nanmin(stat), np.nanmax(stat)
+        vmin = kwargs.get('vmin', vmin)
+        vmax = kwargs.get('vmax', vmax)
+
+        im = ax[i // ncols, i % ncols].pcolormesh(xbins, ybins, stat.T, cmap=cmap, vmin=vmin, vmax=vmax)
+        plt.colorbar(im, ax=ax[i // ncols, i % ncols])
+        ax[i // ncols, i % ncols].set_title(
+            f'{feature}\nfor {round(sectors_CLA[i], 2)} < CLA < {round(sectors_CLA[i + 1], 2)}\n{len(temp)} points')
+        plot_CLA_sector(14, 12, 2.5, sectors_CLA[i], sectors_CLA[i + 1], ax[i // ncols, i % ncols])
+        _, _ = planet_env.layout_earth_env(msh, figure=fig, axes=np.array([ax[i // ncols, i % ncols]]), y_lim=(-17, 17),
+                                           z_lim=(-17, 17), x_slice=0)
+
+    fig.tight_layout()
+
+    
 def maps_by_CLA_sector(df, feature, **kwargs):
     max_distance = kwargs.get('max_distance', 3)
     N_neighbours = kwargs.get('N_neighbours', 500)
@@ -547,7 +619,7 @@ def associate_SW_Safrankova(X_sat, omni, BS_standoff, dtm=0, sampling_time='5S',
     time = (X_sat.index-lag).round(sampling_time)
     vx = pd.Series(name='Vx',dtype=float)
     vx = pd.concat([vx, vxmean.loc[time]]).fillna(abs(vx_median)).values
-    lag = np.array(np.round((BS_x0.values.flatten()-X_sat.values.flatten())*6371/vx),dtype='timedelta64[s]')
+    lag = np.array(np.round((BS_x0.values.flatten()-X_sat.values.flatten())*6371/vx), dtype='timedelta64[s]')
     time = (X_sat.index-lag).round(sampling_time)
     OMNI = pd.DataFrame(columns=omni.columns)
     OMNI = pd.concat([OMNI, omni.loc[time]])
