@@ -529,10 +529,10 @@ def hist_by_CLA(BL, feature, **kwargs):
 
     fig.tight_layout()
 
-    
+
 def maps_by_CLA_sector(df, feature, **kwargs):
     max_distance = kwargs.get('max_distance', 3)
-    N_neighbours = kwargs.get('N_neighbours', 500)
+    N_neighbours = kwargs.get('N_neighbours', 5000)
     nb_sectors = kwargs.get('nb_sectors', 9)
     ncols = kwargs.get('ncols', 3)
     coord = kwargs.get('coord', 'spherical')
@@ -545,8 +545,13 @@ def maps_by_CLA_sector(df, feature, **kwargs):
         temp = df[df.omni_CLA.values >= sectors_CLA[i]]
         temp = temp[temp.omni_CLA.values < sectors_CLA[i + 1]]
 
+        description = ''
+        for k, v in kwargs.items():
+            if k != "N_neighbours" and k != 'coord' :
+                description += f'{k}={v}_'
+        description += f'Nneighbours={N_neighbours}_coord={coord}'
         path = (f'/home/ghisalberti/Maps/{feature}_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
-                f'Nneighbours={N_neighbours}_coord={coord}.pkl')
+                + description + '.pkl')
         if os.path.isfile(path):
             results = pd.read_pickle(path)
         else:
@@ -555,7 +560,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
 
         # Validity
         path = (f'/home/ghisalberti/Maps/validity_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
-                f'Nneighbours={N_neighbours}_maxdistance={max_distance}_coord={coord}.pkl')
+                + description + '.pkl')
         if os.path.isfile(path):
             valid = pd.read_pickle(path)
         else:
