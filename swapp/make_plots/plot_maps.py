@@ -227,12 +227,15 @@ def median_curve_transition_param(temp, feature):
     return fig, ax
 
 
-def hist_transition_param(temp, feature, scale='linear'):
+def hist_transition_param(temp, feature, scale='linear', **kwargs):
     bins = make_bins(scale, temp[[feature]].dropna(), feature, nb_bins=200)
     stat, xbins, ybins, im = binned_statistic_2d(temp.normalized_logNoverT.values, temp[feature].values,
                                                  temp.normalized_logNoverT.values, statistic='count',
                                                  bins=(np.linspace(0, 1, 100), bins))
     stat[stat == 0] = np.nan
+
+    if kwargs.get('normalized',False):
+        stat = stat / np.array([np.nansum(stat, axis=1) for _ in range(len(ybins) - 1)]).T
     stat = gaussian_filter_nan_datas(stat, 1)
 
     fig, ax = plt.subplots()
@@ -244,6 +247,30 @@ def hist_transition_param(temp, feature, scale='linear'):
     plt.xticks([0, 1], ['MSP', 'MSH'])
     plt.title(f'Distribution of {feature} accross the Boundary layer depth')
     plt.yscale(scale)
+
+    if kwargs.get('plot_max', False):
+        interp = gaussian_filter_nan_datas(stat, 5)
+        maxes = []
+        for i in range(len(stat)):
+            maxes += [ybins[np.nanargmax(interp[i])]]
+        maxes = np.array(maxes) + (ybins[1] - ybins[0]) / 2
+        plt.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, maxes, label='max value')
+    if kwargs.get('plot_mean', False):
+        means = []
+        for i in range(len(stat)):
+            means += [np.nanmean(temp[np.logical_and(temp['normalized_logNoverT'].values >= xbins[i],
+                                                     temp['normalized_logNoverT'].values < xbins[i + 1])][
+                                     feature].values).item()]
+        plt.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, means, label='mean')
+    if kwargs.get('plot_median', False):
+        medians = []
+        for i in range(len(stat)):
+            medians += [np.nanmedian(temp[np.logical_and(temp['normalized_logNoverT'].values >= xbins[i],
+                                                         temp['normalized_logNoverT'].values < xbins[i + 1])][
+                                         feature].values).item()]
+        plt.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, maxes, label='median')
+    if kwargs.get('plot_median', False) or kwargs.get('plot_mean', False) or kwargs.get('plot_max', False):
+        plt.legend()
 
     fig.tight_layout()
     return fig, ax
