@@ -532,13 +532,17 @@ def hist_by_CLA(BL, feature, **kwargs):
 
 
 def maps_by_CLA_sector(df, feature, **kwargs):
+    if 'sectors' in kwargs:
+        sectors_CLA = kwargs['sectors']
+        nb_sectors = len(sectors_CLA) - 1
+    else:
+        nb_sectors = kwargs.get('nb_sectors', 9)
+        sectors_CLA = np.linspace(-np.pi, np.pi, nb_sectors + 1)
+
     max_distance = kwargs.get('max_distance', 3)
     N_neighbours = kwargs.pop('N_neighbours', 500)
-    nb_sectors = kwargs.get('nb_sectors', 9)
     ncols = kwargs.get('ncols', 3)
     coord = kwargs.get('coord', 'spherical')
-
-    sectors_CLA = np.linspace(-np.pi, np.pi, nb_sectors + 1)
 
     nrows = int(np.ceil(nb_sectors / ncols))
     fig, ax = plt.subplots(ncols=ncols, nrows=nrows, figsize=(3 * ncols, 3 * nrows))
