@@ -570,7 +570,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
         nb_sectors = kwargs.get('nb_sectors', 9)
         sectors_CLA = np.linspace(-np.pi, np.pi, nb_sectors + 1)
 
-    max_distance = kwargs.get('max_distance', 3)
+    max_distance = kwargs.pop('max_distance', 3)
     N_neighbours = kwargs.pop('N_neighbours', 500)
     ncols = kwargs.get('ncols', 3)
     coord = kwargs.get('coord', 'spherical')
