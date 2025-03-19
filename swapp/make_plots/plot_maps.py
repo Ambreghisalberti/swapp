@@ -73,7 +73,7 @@ def plot_normalized_pannel(df, all_pos, featurex, featurey, fig, bins, sigma, cm
     fig.colorbar(im, ax=ax)
 
 
-def plot_relative_diff_pannel(df, all_pos, featurex, featurey, fig, bins, sigma, cmap, ax):
+def plot_relative_diff_pannel(df, all_pos, featurex, featurey, fig, bins, sigma, cmap, ax, **kwargs):
     stat, xbins, ybins, _ = binned_statistic_2d(all_pos[featurex].values, all_pos[featurey].values,
                                                 all_pos[featurex].values, statistic='count', bins=bins)
     stat2, xbins, ybins, _ = binned_statistic_2d(df[featurex].values, df[featurey].values, df[featurey].values,
@@ -93,6 +93,9 @@ def plot_relative_diff_pannel(df, all_pos, featurex, featurey, fig, bins, sigma,
     else:
         vmin = np.nanmin(relative_diff)
         vmax = np.nanmax(relative_diff)
+    vmin = kwargs.get('vmin', vmin)
+    vmax = kwargs.get('vmax', vmax)
+
     im = ax.pcolormesh(xbins, ybins, relative_diff, cmap=cmap, vmin=vmin, vmax=vmax)
     fig.colorbar(im, ax=ax)
 
@@ -138,17 +141,17 @@ def plot_pos(df, **kwargs):
     if 'z_slice' in kwargs:
         inputs = (df, df2, 'X', 'Y', fig, bins, kwargs.get('sigma', 0), cmap)
         f, inputs = get_plot_panel_info(method, inputs)
-        f(*inputs, ax[i])
+        f(*inputs, ax[i], **kwargs)
         i += 1
     if 'y_slice' in kwargs:
         inputs = (df, df2, 'X', 'Z', fig, bins, kwargs.get('sigma', 0), cmap)
         f, inputs = get_plot_panel_info(method, inputs)
-        f(*inputs, ax[i])
+        f(*inputs, ax[i], **kwargs)
         i += 1
     if 'x_slice' in kwargs:
         inputs = (df, df2, 'Y', 'Z', fig, bins, kwargs.get('sigma', 0), cmap)
         f, inputs = get_plot_panel_info(method, inputs)
-        f(*inputs, ax[i])
+        f(*inputs, ax[i], **kwargs)
         i += 1
 
     msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
