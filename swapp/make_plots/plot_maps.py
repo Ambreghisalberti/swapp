@@ -248,6 +248,7 @@ def hist_transition_param(temp, feature, scale='linear', **kwargs):
     plt.title(f'Distribution of {feature} accross the Boundary layer depth')
     plt.yscale(scale)
 
+    infos = []
     if kwargs.get('plot_max', False):
         interp = gaussian_filter_nan_datas(stat, 5)
         maxes = []
@@ -255,6 +256,7 @@ def hist_transition_param(temp, feature, scale='linear', **kwargs):
             maxes += [ybins[np.nanargmax(interp[i])]]
         maxes = np.array(maxes) + (ybins[1] - ybins[0]) / 2
         plt.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, maxes, label='max value')
+        infos += [maxes]
     if kwargs.get('plot_mean', False):
         means = []
         for i in range(len(stat)):
@@ -262,18 +264,20 @@ def hist_transition_param(temp, feature, scale='linear', **kwargs):
                                                      temp['normalized_logNoverT'].values < xbins[i + 1])][
                                      feature].values).item()]
         plt.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, means, label='mean')
+        infos += [means]
     if kwargs.get('plot_median', False):
         medians = []
         for i in range(len(stat)):
             medians += [np.nanmedian(temp[np.logical_and(temp['normalized_logNoverT'].values >= xbins[i],
                                                          temp['normalized_logNoverT'].values < xbins[i + 1])][
                                          feature].values).item()]
-        plt.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, maxes, label='median')
+        plt.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, medians, label='median')
+        infos += [medians]
     if kwargs.get('plot_median', False) or kwargs.get('plot_mean', False) or kwargs.get('plot_max', False):
         plt.legend()
 
     fig.tight_layout()
-    return fig, ax
+    return fig, ax, xbins, ybins, stat, infos
 
 
 def reposition(df, **kwargs):
