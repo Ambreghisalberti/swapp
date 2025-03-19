@@ -528,11 +528,12 @@ def hist_by_CLA(BL, feature, **kwargs):
                                            z_lim=(-17, 17), x_slice=0)
 
     fig.tight_layout()
+    return fig, ax
 
 
 def maps_by_CLA_sector(df, feature, **kwargs):
     max_distance = kwargs.get('max_distance', 3)
-    N_neighbours = kwargs.get('N_neighbours', 5000)
+    N_neighbours = kwargs.pop('N_neighbours', 500)
     nb_sectors = kwargs.get('nb_sectors', 9)
     ncols = kwargs.get('ncols', 3)
     coord = kwargs.get('coord', 'spherical')
@@ -557,7 +558,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
         if os.path.isfile(path):
             results = pd.read_pickle(path)
         else:
-            results = make_maps(temp, features=[feature], N_neighbours=N_neighbours)
+            results = make_maps(temp, features=[feature], N_neighbours=N_neighbours, **kwargs)
             pd.to_pickle(results, path)
 
         # Validity
@@ -566,7 +567,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
         if os.path.isfile(path):
             valid = pd.read_pickle(path)
         else:
-            valid = is_map_valid(temp, N_neighbours=N_neighbours, max_distance=max_distance)
+            valid = is_map_valid(temp, N_neighbours=N_neighbours, max_distance=max_distance, **kwargs)
             pd.to_pickle(valid, path)
         _,_ = plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols], valid=valid, **kwargs)
         ax[i // ncols, i % ncols].set_title(
