@@ -585,7 +585,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
 
         description = ''
         for k, v in kwargs.items():
-            if k != "N_neighbours" and k != 'coord' :
+            if k != "N_neighbours" and k != 'coord' and k != 'sectors':
                 description += f'{k}={v}_'
         description += f'Nneighbours={N_neighbours}_coord={coord}'
         path = (f'/home/ghisalberti/Maps/{feature}_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
