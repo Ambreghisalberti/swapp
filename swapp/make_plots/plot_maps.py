@@ -141,17 +141,17 @@ def plot_pos(df, **kwargs):
     if 'z_slice' in kwargs:
         inputs = (df, df2, 'X', 'Y', fig, bins, kwargs.get('sigma', 0), cmap)
         f, inputs = get_plot_panel_info(method, inputs)
-        f(*inputs, ax[i], **kwargs)
+        f(*inputs, ax[i])
         i += 1
     if 'y_slice' in kwargs:
         inputs = (df, df2, 'X', 'Z', fig, bins, kwargs.get('sigma', 0), cmap)
         f, inputs = get_plot_panel_info(method, inputs)
-        f(*inputs, ax[i], **kwargs)
+        f(*inputs, ax[i])
         i += 1
     if 'x_slice' in kwargs:
         inputs = (df, df2, 'Y', 'Z', fig, bins, kwargs.get('sigma', 0), cmap)
         f, inputs = get_plot_panel_info(method, inputs)
-        f(*inputs, ax[i], **kwargs)
+        f(*inputs, ax[i])
         i += 1
 
     msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
@@ -482,7 +482,7 @@ def plot_maps(interpolated_features, **kwargs):
         kwargsplot = {'cmap': kwargs.get('cmap')}
         if kwargs.get('cmap') == 'seismic':
             kwargsplot['vmax'] = kwargs.get('vmax', abs(np.nanmax(to_plot)))
-            kwargsplot['vmin'] = kwargs.get('vmax', -abs(np.nanmax(to_plot)))
+            kwargsplot['vmin'] = kwargs.get('vmin', -abs(np.nanmax(to_plot)))
 
         im = ax[i // ncols, i % ncols].pcolormesh(Ymp, Zmp, to_plot, **kwargsplot)
         plt.colorbar(im, ax=ax[i // ncols, i % ncols])
