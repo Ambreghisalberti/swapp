@@ -483,6 +483,11 @@ def plot_maps(interpolated_features, **kwargs):
         if kwargs.get('cmap') == 'seismic':
             kwargsplot['vmax'] = kwargs.get('vmax', abs(np.nanmax(to_plot)))
             kwargsplot['vmin'] = kwargs.get('vmin', -abs(np.nanmax(to_plot)))
+        else:
+            kwargsplot['vmax'] = kwargs.get('vmax', np.nanmax(to_plot))
+            kwargsplot['vmin'] = kwargs.get('vmin', np.nanmin(to_plot))
+        kwargsplot['vmin'] = kwargs.get('vmin', kwargsplot['vmin'])
+        kwargsplot['vmax'] = kwargs.get('vmax', kwargsplot['vmax'])
 
         im = ax[i // ncols, i % ncols].pcolormesh(Ymp, Zmp, to_plot, **kwargsplot)
         plt.colorbar(im, ax=ax[i // ncols, i % ncols])
