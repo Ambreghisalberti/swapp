@@ -598,7 +598,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
         description += f'Nneighbours={N_neighbours}_coord={coord}'
         path = (f'/home/ghisalberti/Maps/{feature}_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
                 + description + '.pkl')
-        if os.path.isfile(path):
+        if not(kwargs.get('overwrite',False)) and os.path.isfile(path):
             results = pd.read_pickle(path)
         else:
             results = make_maps(temp, features=[feature], N_neighbours=N_neighbours, **kwargs)
@@ -607,7 +607,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
         # Validity
         path = (f'/home/ghisalberti/Maps/validity_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
                 + description + '.pkl')
-        if os.path.isfile(path):
+        if not(kwargs.get('overwrite',False)) and os.path.isfile(path):
             valid = pd.read_pickle(path)
         else:
             valid = is_map_valid(temp, N_neighbours=N_neighbours, max_distance=max_distance, **kwargs)
