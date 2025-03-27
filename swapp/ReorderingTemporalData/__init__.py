@@ -155,7 +155,8 @@ def plot_path_feature(feature, path, df, **kwargs):
 
     if show_smoothed:
         # ax.plot(smoothed_df.index.values, smoothed_df[feature].values.flatten(), label='Smoothed temporal')
-        ax.plot(df.index.values, gaussian_filter(df[feature].values.flatten()[path], kernel_filter), label='Smoothed spatial')
+        ax.plot(df.index.values, gaussian_filter(df[feature].values.flatten()[path], kernel_filter),
+                label=f"Smoothed {kwargs.get('label','reordered')}")
     else:
         ax.plot(df.index.values, df[feature].values.flatten()[path],
                 label=kwargs.get('label','reordered'))
