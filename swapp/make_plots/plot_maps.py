@@ -231,7 +231,7 @@ def median_curve_transition_param(temp, feature):
 
 
 def hist_transition_param(temp, feature, scale='linear', **kwargs):
-    bins = make_bins(scale, temp[[feature]].dropna(), feature, nb_bins=200)
+    bins = make_bins(scale, temp[[feature]].dropna(), feature, nb_bins=kwargs.get('nb_bins',200))
     stat, xbins, ybins, im = binned_statistic_2d(temp.normalized_logNoverT.values, temp[feature].values,
                                                  temp.normalized_logNoverT.values, statistic='count',
                                                  bins=(np.linspace(0, 1, 100), bins))
@@ -245,15 +245,15 @@ def hist_transition_param(temp, feature, scale='linear', **kwargs):
         fig, ax = plt.subplots()
     else:
         fig, ax = kwargs['fig'], kwargs['ax']
-        
-    im = plt.pcolormesh(xbins, ybins, stat.T, cmap='jet')
+
+    im = ax.pcolormesh(xbins, ybins, stat.T, cmap='jet')
     plt.colorbar(im)
     ax.set_xlabel('Transition parameter')
     ax.set_ylabel(feature)
     ax.yaxis.set_label_coords(-0.23, 0.5)
     plt.xticks([0, 1], ['MSP', 'MSH'])
-    plt.title(f'Distribution of {feature} accross the Boundary layer depth')
-    plt.yscale(scale)
+    ax.set_title(f'Distribution of {feature}\naccross the Boundary layer depth')
+    ax.set_yscale(scale)
 
     infos = []
     if kwargs.get('plot_max', False):
@@ -262,7 +262,7 @@ def hist_transition_param(temp, feature, scale='linear', **kwargs):
         for i in range(len(stat)):
             maxes += [ybins[np.nanargmax(interp[i])]]
         maxes = np.array(maxes) + (ybins[1] - ybins[0]) / 2
-        plt.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, maxes, label='max value')
+        ax.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, maxes, label='max value')
         infos += [maxes]
     if kwargs.get('plot_mean', False):
         means = []
@@ -270,7 +270,7 @@ def hist_transition_param(temp, feature, scale='linear', **kwargs):
             means += [np.nanmean(temp[np.logical_and(temp['normalized_logNoverT'].values >= xbins[i],
                                                      temp['normalized_logNoverT'].values < xbins[i + 1])][
                                      feature].values).item()]
-        plt.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, means, label='mean')
+        ax.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, means, label='mean')
         infos += [means]
     if kwargs.get('plot_median', False):
         medians = []
@@ -278,10 +278,10 @@ def hist_transition_param(temp, feature, scale='linear', **kwargs):
             medians += [np.nanmedian(temp[np.logical_and(temp['normalized_logNoverT'].values >= xbins[i],
                                                          temp['normalized_logNoverT'].values < xbins[i + 1])][
                                          feature].values).item()]
-        plt.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, medians, label='median')
+        ax.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, medians, label='median')
         infos += [medians]
     if kwargs.get('plot_median', False) or kwargs.get('plot_mean', False) or kwargs.get('plot_max', False):
-        plt.legend()
+        ax.legend()
 
     fig.tight_layout()
     return fig, ax, xbins, ybins, stat, infos
@@ -301,7 +301,7 @@ def reposition(df, **kwargs):
     return df
 
 
-def plot_repositionned_pannel(temp, featurex, featurey, f, fig, ax, cmap, bins, sigma):
+def plot_repositionned_pannel(temp, featurex, featurey, f, fig, ax, cmap, bins, sigma, **kwargs):
     stat, xbins, ybins, _ = binned_statistic_2d(temp[featurex].values, temp[featurey].values,
                                                 f(temp), statistic='median', bins=bins)
     stat = gaussian_filter_nan_datas(stat, sigma)
@@ -310,6 +310,8 @@ def plot_repositionned_pannel(temp, featurex, featurey, f, fig, ax, cmap, bins, 
         vmin = -vmax
     else:
         vmax, vmin = None, None
+    vmin = kwargs.get('vmin', vmin)
+    vmax = kwargs.get('vmax', vmax)
     im = ax.pcolormesh(xbins, ybins, stat.T, vmin=vmin, vmax=vmax, cmap=cmap)
     fig.colorbar(im, ax=ax)
 
@@ -347,19 +349,28 @@ def plot_repositionned_stat_binned(df, feature, **kwargs):
         ax = np.array([ax])
 
     # Drawing cuts instead of projection to see better : points at max 1Re of the plane
+    kwargsplot = {}
+    if 'vmin' in kwargs:
+        kwargsplot['vmin'] = kwargs.get(['vmin'])
+    if 'vmax' in kwargs:
+        kwargsplot['vmax'] = kwargs.get(['vmax'])
+
     i = 0
     if 'z_slice' in kwargs:
         temp = df[abs(df.normalized_Z.values) < 1]
-        plot_repositionned_pannel(temp, 'normalized_X', 'normalized_Y', f, fig, ax[i], cmap, bins, sigma)
+        plot_repositionned_pannel(temp, 'normalized_X', 'normalized_Y', f, fig, ax[i], cmap, bins,
+                                  sigma, **kwargsplot)
         i += 1
 
     if 'y_slice' in kwargs:
         temp = df[abs(df.normalized_Y.values) < 1]
-        plot_repositionned_pannel(temp, 'normalized_X', 'normalized_Z', f, fig, ax[i], cmap, bins, sigma)
+        plot_repositionned_pannel(temp, 'normalized_X', 'normalized_Z', f, fig, ax[i], cmap, bins,
+                                  sigma, **kwargsplot)
         i += 1
 
     if 'x_slice' in kwargs:
-        plot_repositionned_pannel(df, 'normalized_Y', 'normalized_Z', f, fig, ax[i], cmap, bins, sigma)
+        plot_repositionned_pannel(df, 'normalized_Y', 'normalized_Z', f, fig, ax[i], cmap, bins,
+                                  sigma, **kwargsplot)
 
     msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
     fig, ax = planet_env.layout_earth_env(msh, figure=fig, axes=np.array([ax]), x_lim=(-2, 25), **kwargs)
