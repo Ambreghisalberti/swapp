@@ -217,7 +217,7 @@ def reorder(df, columns_to_reorder, **kwargs):
         plot_path(path, df, columns=columns_to_plot, ncols=3, label='NoverT',
                   fig=fig, ax=ax, **kwargs)
 
-    plot_path(df.index.values, df, columns=columns_to_plot, ncols=3, label='temporal',
+    plot_path(np.arange(len(df)), df, columns=columns_to_plot, ncols=3, label='temporal',
               fig=fig, ax=ax, **kwargs)
 
     for a in ax:
