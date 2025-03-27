@@ -351,9 +351,9 @@ def plot_repositionned_stat_binned(df, feature, **kwargs):
     # Drawing cuts instead of projection to see better : points at max 1Re of the plane
     kwargsplot = {}
     if 'vmin' in kwargs:
-        kwargsplot['vmin'] = kwargs.get(['vmin'])
+        kwargsplot['vmin'] = kwargs.get('vmin')
     if 'vmax' in kwargs:
-        kwargsplot['vmax'] = kwargs.get(['vmax'])
+        kwargsplot['vmax'] = kwargs.get('vmax')
 
     i = 0
     if 'z_slice' in kwargs:
