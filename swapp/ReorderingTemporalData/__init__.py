@@ -144,6 +144,38 @@ def plot_temporal_and_reordered(path, df, **kwargs):
     plt.tight_layout()
 
 
+def plot_path_feature(feature, path, df, **kwargs):
+    show_smoothed = kwargs.get('show_smoothed', False)
+    kernel_filter = kwargs.get('kernel_filter', 5)
+
+    if ('fig' not in kwargs) or ('ax' not in kwargs):
+        fig, ax = plt.subplots()
+    else:
+        fig, ax = kwargs['fig'], kwargs['ax']
+
+    if show_smoothed:
+        # ax.plot(smoothed_df.index.values, smoothed_df[feature].values.flatten(), label='Smoothed temporal')
+        ax.plot(df.index.values, gaussian_filter(df[feature].values.flatten()[path], kernel_filter), label='Smoothed spatial')
+    else:
+        ax.plot(df.index.values, df[feature].values.flatten()[path],
+                label=kwargs.get('label','reordered'))
+
+
+def plot_path(path, df, **kwargs):
+    columns = kwargs.pop('columns', df.columns)
+    nrows = len(columns)
+    fig, ax = plt.subplots(nrows=nrows, figsize=(12, nrows * 1.5))
+
+    for i, col in enumerate(columns):
+        plot_path_feature(col, path, df, fig=fig, ax=ax[i], **kwargs)
+        ax[i].set_ylabel(col)
+        ax[i].set_xlabel('Time')
+    if 'title' in kwargs:
+        fig.suptitle(kwargs['title'])
+
+    plt.tight_layout()
+
+
 def reorder(df, columns_to_reorder, **kwargs):
     columns_to_plot = kwargs.pop('columns_to_plot', ['B', 'Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Tpara', 'Tperp'])
 
@@ -156,15 +188,24 @@ def reorder(df, columns_to_reorder, **kwargs):
     scaled_values = scaler.fit_transform(values)
 
     distance_matrix = cdist(scaled_values, scaled_values)
-    method = kwargs.get('method','insertion')
-    if method == 'insertion':
+
+    if kwargs.get('insertion', False):
         path = find_path_nearest_neighbours(distance_matrix)
-    elif method == 'closest':
+        plot_path(path, df, columns=columns_to_plot, ncols=3, label='insertion', **kwargs)
+
+    if kwargs.get('closest', False):
         path = find_path_nearest_neighbours_locally(distance_matrix)
-    elif method == 'PCA':
+        plot_path(path, df, columns=columns_to_plot, ncols=3, label='closest', **kwargs)
+
+    if kwargs.get('PCA', False):
         path = find_shortest_path_PCA(pd.DataFrame(scaled_values, index=smoothed_data.index.values,
                                                    columns=columns_to_reorder))
+        plot_path(path, df, columns=columns_to_plot, ncols=3, label='PCA', **kwargs)
 
-    plot_temporal_and_reordered(path, df, columns=columns_to_plot, ncols=3, **kwargs)
+    if kwargs.get('NoverT', False):
+        path = df.sort_values(by='logNoverT').index.values
+        plot_path(path, df, columns=columns_to_plot, ncols=3, label='NoverT', **kwargs)
+
+    plot_path(df.index.values, df, columns=columns_to_plot, ncols=3, label='temporal', **kwargs)
 
     return path
