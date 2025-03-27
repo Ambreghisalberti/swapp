@@ -163,8 +163,11 @@ def plot_path_feature(feature, path, df, **kwargs):
 
 def plot_path(path, df, **kwargs):
     columns = kwargs.pop('columns', df.columns)
-    nrows = len(columns)
-    fig, ax = plt.subplots(nrows=nrows, figsize=(12, nrows * 1.5))
+    if 'fig' in kwargs and 'ax' in kwargs:
+        fig, ax = kwargs['fig'], kwargs['ax']
+    else:
+        nrows = len(columns)
+        fig, ax = plt.subplots(nrows=nrows, figsize=(12, nrows * 1.5))
 
     for i, col in enumerate(columns):
         plot_path_feature(col, path, df, fig=fig, ax=ax[i], **kwargs)
@@ -179,6 +182,9 @@ def plot_path(path, df, **kwargs):
 def reorder(df, columns_to_reorder, **kwargs):
     columns_to_plot = kwargs.pop('columns_to_plot', ['B', 'Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Tpara', 'Tperp'])
 
+    nrows = len(columns_to_plot)
+    fig, ax = plt.subplots(nrows=nrows, figsize=(12, nrows * 1.5))
+    
     values = df.values
     # values = medfilt(values, kernel_size=[kernel_medfilt, 1])
     smoothed_data = pd.DataFrame(values, index=df.index.values, columns=[df.columns])
@@ -191,21 +197,30 @@ def reorder(df, columns_to_reorder, **kwargs):
 
     if kwargs.get('insertion', False):
         path = find_path_nearest_neighbours(distance_matrix)
-        plot_path(path, df, columns=columns_to_plot, ncols=3, label='insertion', **kwargs)
+        plot_path(path, df, columns=columns_to_plot, ncols=3, label='insertion',
+                  fig=fig, ax=ax, **kwargs)
 
     if kwargs.get('closest', False):
         path = find_path_nearest_neighbours_locally(distance_matrix)
-        plot_path(path, df, columns=columns_to_plot, ncols=3, label='closest', **kwargs)
+        plot_path(path, df, columns=columns_to_plot, ncols=3, label='closest',
+                  fig=fig, ax=ax, **kwargs)
 
     if kwargs.get('PCA', False):
         path = find_shortest_path_PCA(pd.DataFrame(scaled_values, index=smoothed_data.index.values,
                                                    columns=columns_to_reorder))
-        plot_path(path, df, columns=columns_to_plot, ncols=3, label='PCA', **kwargs)
+        plot_path(path, df, columns=columns_to_plot, ncols=3, label='PCA',
+                  fig=fig, ax=ax, **kwargs)
 
     if kwargs.get('NoverT', False):
-        path = df.sort_values(by='logNoverT').index.values
-        plot_path(path, df, columns=columns_to_plot, ncols=3, label='NoverT', **kwargs)
+        df['numeric_index'] = np.arange(len(df))
+        path = df.sort_values(by='logNoverT').numeric_index.values
+        plot_path(path, df, columns=columns_to_plot, ncols=3, label='NoverT',
+                  fig=fig, ax=ax, **kwargs)
 
-    plot_path(df.index.values, df, columns=columns_to_plot, ncols=3, label='temporal', **kwargs)
+    plot_path(df.index.values, df, columns=columns_to_plot, ncols=3, label='temporal',
+              fig=fig, ax=ax, **kwargs)
+
+    for a in ax:
+        a.legend()
 
     return path
