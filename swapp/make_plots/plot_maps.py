@@ -241,7 +241,10 @@ def hist_transition_param(temp, feature, scale='linear', **kwargs):
         stat = stat / np.array([np.nansum(stat, axis=1) for _ in range(len(ybins) - 1)]).T
     stat = gaussian_filter_nan_datas(stat, 1)
 
-    fig, ax = plt.subplots()
+    if 'fig' not in kwargs or 'ax' not in kwargs:
+        fig, ax = kwargs['fig'], kwargs['ax']
+    else:
+        fig, ax = plt.subplots()
     im = plt.pcolormesh(xbins, ybins, stat.T, cmap='jet')
     plt.colorbar(im)
     ax.set_xlabel('Transition parameter')
