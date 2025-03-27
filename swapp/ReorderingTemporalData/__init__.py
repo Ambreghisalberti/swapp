@@ -164,7 +164,7 @@ def plot_path_feature(feature, path, df, **kwargs):
 def plot_path(path, df, **kwargs):
     columns = kwargs.pop('columns', df.columns)
     if 'fig' in kwargs and 'ax' in kwargs:
-        fig, ax = kwargs['fig'], kwargs['ax']
+        fig, ax = kwargs.pop('fig'), kwargs.pop('ax')
     else:
         nrows = len(columns)
         fig, ax = plt.subplots(nrows=nrows, figsize=(12, nrows * 1.5))
@@ -184,7 +184,7 @@ def reorder(df, columns_to_reorder, **kwargs):
 
     nrows = len(columns_to_plot)
     fig, ax = plt.subplots(nrows=nrows, figsize=(12, nrows * 1.5))
-    
+
     values = df.values
     # values = medfilt(values, kernel_size=[kernel_medfilt, 1])
     smoothed_data = pd.DataFrame(values, index=df.index.values, columns=[df.columns])
