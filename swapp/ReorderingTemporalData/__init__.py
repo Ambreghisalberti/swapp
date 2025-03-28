@@ -180,7 +180,7 @@ def plot_path(path, df, **kwargs):
     plt.tight_layout()
 
 
-def reorder(df, columns_to_reorder, **kwargs):
+def reorder(df, start, stop, columns_to_reorder, **kwargs):
     columns_to_plot = kwargs.pop('columns_to_plot', ['B', 'Bx', 'By', 'Bz', 'Np', 'Vx', 'Vy', 'Tpara', 'Tperp'])
 
     nrows = len(columns_to_plot)
@@ -193,37 +193,39 @@ def reorder(df, columns_to_reorder, **kwargs):
     values = smoothed_data[columns_to_reorder].values
     scaler = StandardScaler()
     scaled_values = scaler.fit_transform(values)
+    scaled_values = pd.DataFrame(scaled_values, index=df.index.values, columns=columns_to_reorder)[start:stop].values
 
     distance_matrix = cdist(scaled_values, scaled_values)
 
     if kwargs.get('insertion', False):
         path = find_path_nearest_neighbours(distance_matrix)
-        plot_path(path, df, columns=columns_to_plot, ncols=3, label='insertion',
+        plot_path(path, df[start:stop], columns=columns_to_plot, ncols=3, label='insertion',
                   fig=fig, ax=ax, **kwargs)
 
     if kwargs.get('closest', False):
         path = find_path_nearest_neighbours_locally(distance_matrix)
-        plot_path(path, df, columns=columns_to_plot, ncols=3, label='closest',
+        plot_path(path, df[start:stop], columns=columns_to_plot, ncols=3, label='closest',
                   fig=fig, ax=ax, **kwargs)
 
     if kwargs.get('PCA', False):
         path = find_shortest_path_PCA(pd.DataFrame(scaled_values, index=smoothed_data.index.values,
                                                    columns=columns_to_reorder))
-        plot_path(path, df, columns=columns_to_plot, ncols=3, label='PCA',
+        plot_path(path, df[start:stop], columns=columns_to_plot, ncols=3, label='PCA',
                   fig=fig, ax=ax, **kwargs)
 
     if kwargs.get('NoverT', False):
-        df['numeric_index'] = np.arange(len(df))
-        path = df.sort_values(by='logNoverT').numeric_index.values
-        if np.nanmean(df['B'].values[:5]) < np.nanmean(df['B'].values[-5:]):  # MSH is on the left and MSP on the right
+        subdf = df[start:stop]
+        subdf['numeric_index'] = np.arange(len(subdf))
+        path = subdf.sort_values(by='logNoverT').numeric_index.values
+        if np.nanmean(subdf['B'].values[:5]) < np.nanmean(subdf['B'].values[-5:]):  # MSH is on the left and MSP on the right
             path = path[::-1]
-        plot_path(path, df, columns=columns_to_plot, ncols=3, label='NoverT',
+        plot_path(path, subdf, columns=columns_to_plot, ncols=3, label='NoverT',
                   fig=fig, ax=ax, **kwargs)
 
-    plot_path(np.arange(len(df)), df, columns=columns_to_plot, ncols=3, label='temporal',
+    plot_path(np.arange(len(df[start:stop])), df[start:stop], columns=columns_to_plot, ncols=3, label='temporal',
               fig=fig, ax=ax, **kwargs)
 
     for a in ax:
-        a.legend(bbox_to_anchor=(1.3, 0.5, 0.4, 0.5))    # Changer ça, trouver le meilleur!
+        a.legend(loc="upper left", bbox_to_anchor=(1, 1, 0.1, 0.1))
 
     return path
