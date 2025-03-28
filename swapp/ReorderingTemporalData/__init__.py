@@ -215,6 +215,8 @@ def reorder(df, columns_to_reorder, **kwargs):
     if kwargs.get('NoverT', False):
         df['numeric_index'] = np.arange(len(df))
         path = df.sort_values(by='logNoverT').numeric_index.values
+        if np.nanmean(df['B'].values[:5]) < np.nanmean(df['B'].values[-5:]):  # MSH is on the left and MSP on the right
+            path = path[::-1]
         plot_path(path, df, columns=columns_to_plot, ncols=3, label='NoverT',
                   fig=fig, ax=ax, **kwargs)
 
@@ -222,6 +224,6 @@ def reorder(df, columns_to_reorder, **kwargs):
               fig=fig, ax=ax, **kwargs)
 
     for a in ax:
-        a.legend()
+        a.legend(bbox_to_anchor=(1.3, 0.5, 0.4, 0.5))    # Changer ça, trouver le meilleur!
 
     return path
