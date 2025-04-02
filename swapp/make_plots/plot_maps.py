@@ -230,7 +230,7 @@ def median_curve_transition_param(temp, feature):
     return fig, ax
 
 
-def hist_transition_param(temp, feature, scale='linear', **kwargs):
+def hist_transition_param(temp, feature, transition='normalized_logNoverT', scale='linear', **kwargs):
     bins = make_bins(scale, temp[[feature]].dropna(), feature, nb_bins=kwargs.get('nb_bins',200))
     stat, xbins, ybins, im = binned_statistic_2d(temp.normalized_logNoverT.values, temp[feature].values,
                                                  temp.normalized_logNoverT.values, statistic='count',
@@ -248,7 +248,8 @@ def hist_transition_param(temp, feature, scale='linear', **kwargs):
 
     im = ax.pcolormesh(xbins, ybins, stat.T, cmap='jet')
     plt.colorbar(im)
-    ax.set_xlabel('Transition parameter')
+    ax.set_xlabel(f'Transition parameter {transition}')
+    ax.set_xlabel(f'Transition parameter {transition}')
     ax.set_ylabel(feature)
     ax.yaxis.set_label_coords(-0.23, 0.5)
     plt.xticks([0, 1], ['MSP', 'MSH'])
@@ -267,16 +268,16 @@ def hist_transition_param(temp, feature, scale='linear', **kwargs):
     if kwargs.get('plot_mean', False):
         means = []
         for i in range(len(stat)):
-            means += [np.nanmean(temp[np.logical_and(temp['normalized_logNoverT'].values >= xbins[i],
-                                                     temp['normalized_logNoverT'].values < xbins[i + 1])][
+            means += [np.nanmean(temp[np.logical_and(temp[transition].values >= xbins[i],
+                                                     temp[transition].values < xbins[i + 1])][
                                      feature].values).item()]
         ax.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, means, label='mean')
         infos += [means]
     if kwargs.get('plot_median', False):
         medians = []
         for i in range(len(stat)):
-            medians += [np.nanmedian(temp[np.logical_and(temp['normalized_logNoverT'].values >= xbins[i],
-                                                         temp['normalized_logNoverT'].values < xbins[i + 1])][
+            medians += [np.nanmedian(temp[np.logical_and(temp[transition].values >= xbins[i],
+                                                         temp[transition].values < xbins[i + 1])][
                                          feature].values).item()]
         ax.plot(xbins[:-1] + (xbins[1] - xbins[0]) / 2, medians, label='median')
         infos += [medians]
