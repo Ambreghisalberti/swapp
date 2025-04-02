@@ -559,8 +559,17 @@ def hist_by_CLA(BL, feature, **kwargs):
     if len(ax.shape) == 1:
         ax = np.array([ax])
     for i in range(nb_sectors):
-        temp = BL[BL.omni_CLA.values >= sectors_CLA[i]]
-        temp = temp[temp.omni_CLA.values < sectors_CLA[i + 1]]
+        if (sectors_CLA[i] >= -np.pi) and (sectors_CLA[i+1] <= np.pi):
+            temp = BL[BL.omni_CLA.values >= sectors_CLA[i]]
+            temp = temp[temp.omni_CLA.values < sectors_CLA[i + 1]]
+        elif sectors_CLA[i] < -np.pi:
+            temp1 = BL[BL.omni_CLA.values >= sectors_CLA[i]+2*np.pi]
+            temp2 = BL[BL.omni_CLA.values < sectors_CLA[i + 1]]
+            temp = pd.concat([temp1,temp2])
+        else:   # sectors_CLA[i+1] > np.pi
+            temp1 = BL[BL.omni_CLA.values >= sectors_CLA[i]]
+            temp2 = BL[BL.omni_CLA.values < sectors_CLA[i + 1]-2*np.pi]
+            temp = pd.concat([temp1, temp2])
 
         stat, xbins, ybins, im = binned_statistic_2d(temp.Y.values, temp.Z.values, temp[feature].values,
                                                      statistic='mean', bins=kwargs.get('bins', 50))
@@ -603,8 +612,17 @@ def maps_by_CLA_sector(df, feature, **kwargs):
     if len(ax.shape)==1:
         ax = np.array([ax])
     for i in range(nb_sectors):
-        temp = df[df.omni_CLA.values >= sectors_CLA[i]]
-        temp = temp[temp.omni_CLA.values < sectors_CLA[i + 1]]
+        if (sectors_CLA[i] >= -np.pi) and (sectors_CLA[i + 1] <= np.pi):
+            temp = df[df.omni_CLA.values >= sectors_CLA[i]]
+            temp = temp[temp.omni_CLA.values < sectors_CLA[i + 1]]
+        elif sectors_CLA[i] < -np.pi:
+            temp1 = df[df.omni_CLA.values >= sectors_CLA[i] + 2 * np.pi]
+            temp2 = df[df.omni_CLA.values < sectors_CLA[i + 1]]
+            temp = pd.concat([temp1, temp2])
+        else:  # sectors_CLA[i+1] > np.pi
+            temp1 = df[df.omni_CLA.values >= sectors_CLA[i]]
+            temp2 = df[df.omni_CLA.values < sectors_CLA[i + 1] - 2 * np.pi]
+            temp = pd.concat([temp1, temp2])
 
         description = ''
         for k, v in kwargs.items():

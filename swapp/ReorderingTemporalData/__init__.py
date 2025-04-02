@@ -186,44 +186,49 @@ def reorder(df, start, stop, columns_to_reorder, **kwargs):
     nrows = len(columns_to_plot)
     fig, ax = plt.subplots(nrows=nrows, figsize=(12, nrows * 1.5))
 
-    values = df.values
-    # values = medfilt(values, kernel_size=[kernel_medfilt, 1])
-    smoothed_data = pd.DataFrame(values, index=df.index.values, columns=[df.columns])
+    if 'scaler' not in kwargs:
+        values = df.values
+        # values = medfilt(values, kernel_size=[kernel_medfilt, 1])
+        values = pd.DataFrame(values, index=df.index.values, columns=[df.columns])
+        values = values[columns_to_reorder].values
 
-    values = smoothed_data[columns_to_reorder].values
-    scaler = StandardScaler()
-    scaled_values = scaler.fit_transform(values)
-    scaled_values = pd.DataFrame(scaled_values, index=df.index.values, columns=columns_to_reorder)[start:stop].values
-
-    distance_matrix = cdist(scaled_values, scaled_values)
+        scaler = StandardScaler()
+        values = scaler.fit_transform(values)
+        values = pd.DataFrame(values, index=df.index.values, columns=columns_to_reorder)[start:stop].dropna().values
+    else:
+        scaler = kwargs['scaler']
+        values = scaler.transform(df[start:stop][columns_to_reorder].dropna().values)
 
     if kwargs.get('insertion', False):
+        distance_matrix = cdist(values, values)
         path = find_path_nearest_neighbours(distance_matrix)
-        plot_path(path, df[start:stop], columns=columns_to_plot, ncols=3, label='insertion',
+        plot_path(path, df[start:stop][columns_to_reorder].dropna(), columns=columns_to_plot, ncols=3, label='insertion',
                   fig=fig, ax=ax, **kwargs)
 
     if kwargs.get('closest', False):
+        distance_matrix = cdist(values, values)
         path = find_path_nearest_neighbours_locally(distance_matrix)
-        plot_path(path, df[start:stop], columns=columns_to_plot, ncols=3, label='closest',
+        plot_path(path, df[start:stop][columns_to_reorder].dropna(), columns=columns_to_plot, ncols=3, label='closest',
                   fig=fig, ax=ax, **kwargs)
 
     if kwargs.get('PCA', False):
-        path = find_shortest_path_PCA(pd.DataFrame(scaled_values, index=smoothed_data.index.values,
+        path = find_shortest_path_PCA(pd.DataFrame(values, index=df[start:stop][columns_to_reorder].dropna().index.values,
                                                    columns=columns_to_reorder))
-        plot_path(path, df[start:stop], columns=columns_to_plot, ncols=3, label='PCA',
+        plot_path(path, df[start:stop][columns_to_reorder].dropna(), columns=columns_to_plot, ncols=3, label='PCA',
                   fig=fig, ax=ax, **kwargs)
 
     if kwargs.get('NoverT', False):
-        subdf = df[start:stop]
+        subdf = df[start:stop][columns_to_reorder].dropna()
         subdf['numeric_index'] = np.arange(len(subdf))
         path = subdf.sort_values(by='logNoverT').numeric_index.values
-        if np.nanmean(subdf['B'].values[:5]) < np.nanmean(subdf['B'].values[-5:]):  # MSH is on the left and MSP on the right
+        if np.nanmean(subdf[['Tp']].dropna().values[:5]) < np.nanmean(
+                subdf[['Tp']].dropna().values[-5:]):  # MSH is on the left and MSP on the right
             path = path[::-1]
         plot_path(path, subdf, columns=columns_to_plot, ncols=3, label='NoverT',
                   fig=fig, ax=ax, **kwargs)
 
-    plot_path(np.arange(len(df[start:stop])), df[start:stop], columns=columns_to_plot, ncols=3, label='temporal',
-              fig=fig, ax=ax, **kwargs)
+    plot_path(np.arange(len(df[start:stop][columns_to_reorder].dropna())), df[start:stop][columns_to_reorder].dropna(),
+              columns=columns_to_plot, ncols=3, label='temporal', fig=fig, ax=ax, **kwargs)
 
     for a in ax:
         a.legend(loc="upper left", bbox_to_anchor=(1, 1, 0.1, 0.1))
