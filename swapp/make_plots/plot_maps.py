@@ -595,13 +595,47 @@ def hist_by_CLA(BL, feature, **kwargs):
     return fig, ax
 
 
-def maps_by_CLA_sector(df, feature, **kwargs):
-    if 'sectors' in kwargs:
+def make_CLA_slice(df, min_cla, max_cla):
+    if (min_cla >= -np.pi) and (max_cla <= np.pi):
+        temp = df[df.omni_CLA.values >= min_cla]
+        temp = temp[temp.omni_CLA.values < max_cla]
+    elif min_cla < -np.pi:
+        temp1 = df[df.omni_CLA.values >= min_cla + 2 * np.pi]
+        temp2 = df[df.omni_CLA.values < max_cla]
+        temp = pd.concat([temp1, temp2])
+    else:  # sectors_CLA[i+1] > np.pi
+        temp1 = df[df.omni_CLA.values >= min_cla]
+        temp2 = df[df.omni_CLA.values < max_cla - 2 * np.pi]
+        temp = pd.concat([temp1, temp2])
+    return temp
+
+
+def make_description_from_kwargs(N_neighbours, coord, **kwargs):
+    description = ''
+    for k, v in kwargs.items():
+        if k != "N_neighbours" and k != 'coord' and k != 'sectors':
+            description += f'{k}={v}_'
+    description += f'Nneighbours={N_neighbours}_coord={coord}'
+    return description
+
+
+def make_cla_sectors(**kwargs):
+    if 'min_sectors' in kwargs and 'max_sectors' in kwargs :
+        min_sectors = kwargs['min_sectors']
+        max_sectors = kwargs['max_sectors']
+    elif 'sectors' in kwargs:
         sectors_CLA = kwargs['sectors']
         nb_sectors = len(sectors_CLA) - 1
+        min_sectors, max_sectors = sectors_CLA[:-1], sectors_CLA[1:]
     else:
         nb_sectors = kwargs.get('nb_sectors', 9)
         sectors_CLA = np.linspace(-np.pi, np.pi, nb_sectors + 1)
+        min_sectors, max_sectors = sectors_CLA[:-1], sectors_CLA[1:]
+    return nb_sectors, min_sectors, max_sectors
+
+
+def maps_by_CLA_sector(df, feature, **kwargs):
+    nb_sectors, min_CLA_sectors, max_cla_sectors = make_cla_sectors(**kwargs)
 
     max_distance = kwargs.pop('max_distance', 3)
     N_neighbours = kwargs.pop('N_neighbours', 500)
@@ -613,24 +647,10 @@ def maps_by_CLA_sector(df, feature, **kwargs):
     if len(ax.shape)==1:
         ax = np.array([ax])
     for i in range(nb_sectors):
-        if (sectors_CLA[i] >= -np.pi) and (sectors_CLA[i + 1] <= np.pi):
-            temp = df[df.omni_CLA.values >= sectors_CLA[i]]
-            temp = temp[temp.omni_CLA.values < sectors_CLA[i + 1]]
-        elif sectors_CLA[i] < -np.pi:
-            temp1 = df[df.omni_CLA.values >= sectors_CLA[i] + 2 * np.pi]
-            temp2 = df[df.omni_CLA.values < sectors_CLA[i + 1]]
-            temp = pd.concat([temp1, temp2])
-        else:  # sectors_CLA[i+1] > np.pi
-            temp1 = df[df.omni_CLA.values >= sectors_CLA[i]]
-            temp2 = df[df.omni_CLA.values < sectors_CLA[i + 1] - 2 * np.pi]
-            temp = pd.concat([temp1, temp2])
+        temp = make_CLA_slice(df, min_CLA_sectors[i], max_cla_sectors[i])
 
-        description = ''
-        for k, v in kwargs.items():
-            if k != "N_neighbours" and k != 'coord' and k != 'sectors':
-                description += f'{k}={v}_'
-        description += f'Nneighbours={N_neighbours}_coord={coord}'
-        path = (f'/home/ghisalberti/Maps/{feature}_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
+        description = make_description_from_kwargs(N_neighbours, coord, **kwargs)
+        path = (f'/home/ghisalberti/Maps/{feature}_CLA_{min_CLA_sectors[i]}_{max_cla_sectors[i]}_'
                 + description + '.pkl')
         if not(kwargs.get('overwrite',False)) and os.path.isfile(path):
             results = pd.read_pickle(path)
@@ -639,7 +659,7 @@ def maps_by_CLA_sector(df, feature, **kwargs):
             pd.to_pickle(results, path)
 
         # Validity
-        path = (f'/home/ghisalberti/Maps/validity_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
+        path = (f'/home/ghisalberti/Maps/validity_CLA_{min_CLA_sectors[i]}_{max_cla_sectors[i]}_'
                 + description + '.pkl')
         if not(kwargs.get('overwrite',False)) and os.path.isfile(path):
             valid = pd.read_pickle(path)
@@ -648,8 +668,8 @@ def maps_by_CLA_sector(df, feature, **kwargs):
             pd.to_pickle(valid, path)
         _,_ = plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols], valid=valid, **kwargs)
         ax[i // ncols, i % ncols].set_title(
-            f'{feature}\nfor {round(sectors_CLA[i], 2)} < CLA < {round(sectors_CLA[i + 1], 2)}\n{len(temp)} points')
-        plot_CLA_sector(14, 12, 2.5, sectors_CLA[i], sectors_CLA[i + 1], ax[i // ncols, i % ncols])
+            f'{feature}\nfor {round(min_CLA_sectors[i], 2)} < CLA < {round(max_distance[i], 2)}\n{len(temp)} points')
+        plot_CLA_sector(14, 12, 2.5, min_CLA_sectors[i], max_distance[i], ax[i // ncols, i % ncols])
 
     fig.tight_layout()
     return fig, ax
