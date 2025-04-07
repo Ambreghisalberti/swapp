@@ -508,9 +508,8 @@ def plot_maps(interpolated_features, **kwargs):
         im = ax[i // ncols, i % ncols].pcolormesh(Ymp, Zmp, to_plot, **kwargsplot)
         plt.colorbar(im, ax=ax[i // ncols, i % ncols])
 
-        fig, ax[i // ncols, i % ncols] = planet_env.layout_earth_env(msh, figure=fig,
-                                                                     axes=np.array([ax[i // ncols, i % ncols]]),
-                                                                     y_lim=(-17, 17), z_lim=(-15, 15), x_slice=0)
+        _,_ = planet_env.layout_earth_env(msh, figure=fig, axes=np.array([ax[i // ncols, i % ncols]]),
+                                          y_lim=(-17, 17), z_lim=(-15, 15), x_slice=0)
         ax[i // ncols, i % ncols].set_aspect('equal')
 
     fig.tight_layout()
