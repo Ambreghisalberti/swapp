@@ -511,6 +511,8 @@ def plot_maps(interpolated_features, **kwargs):
         fig, ax[i // ncols, i % ncols] = planet_env.layout_earth_env(msh, figure=fig,
                                                                      axes=np.array([ax[i // ncols, i % ncols]]),
                                                                      y_lim=(-17, 17), z_lim=(-15, 15), x_slice=0)
+    for a in ax.flatten():
+        a.set_aspect('equal')
     fig.tight_layout()
     return fig, ax
 
@@ -604,7 +606,7 @@ def make_slice(df, feature, min_val, max_val):
     if 'CLA' in feature or 'COA' in feature:
         return make_CLA_slice(df, min_val, max_val)
     else:
-        return df[min_val < df[feature].values < max_val]
+        return df[np.logical_and(min_val < df[feature].values, df[feature].values < max_val)]
 
 
 def make_description_from_kwargs(N_neighbours, coord, **kwargs):
