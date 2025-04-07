@@ -660,7 +660,11 @@ def maps_by_sectors(df, feature_to_map, feature_to_slice, **kwargs):
         if not(kwargs.get('overwrite',False)) and os.path.isfile(path):
             results = pd.read_pickle(path)
         else:
-            results = make_maps(temp, features=[feature_to_map], N_neighbours=N_neighbours, **kwargs)
+            if len(temp) > N_neighbours:
+                results = make_maps(temp, features=[feature_to_map], N_neighbours=N_neighbours, **kwargs)
+            else:
+                results = make_maps(temp, features=[feature_to_map], N_neighbours=int(N_neighbours//4), **kwargs)
+
             pd.to_pickle(results, path)
 
         # Validity
