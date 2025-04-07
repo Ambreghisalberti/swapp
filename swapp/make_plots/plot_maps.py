@@ -7,7 +7,7 @@ from scipy.interpolate import griddata
 from swapp.make_plots.plot_functions import make_bins
 from spok.models.planetary import mp_shue1997
 from matplotlib.colors import LogNorm
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neighbors import KNeighborsRegressor, RadiusNeighborsRegressor
 from multiprocessing import Pool
 import numpy as np
 import matplotlib.pyplot as plt
@@ -422,8 +422,13 @@ def make_data_to_grid(df, **kwargs):
     return pos, values
 
 
-def train_knn(x, y, N=10000):
-    model = KNeighborsRegressor(n_neighbors=N, weights='distance', n_jobs=1)
+def train_knn(x, y, N=10000, r=1, method='KNN'):
+    if method == 'KNN':
+        model = KNeighborsRegressor(n_neighbors=N, weights='distance', n_jobs=1)
+    elif method == 'RNN':
+        model = RadiusNeighborsRegressor(radius=r, weights='distance', n_jobs=1)
+    else:
+        raise Exception(f'The method should be either KNN or RNN, but is {method}')
     model.fit(x, y)
     return model
 
