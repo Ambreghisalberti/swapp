@@ -422,7 +422,7 @@ def make_data_to_grid(df, **kwargs):
     return pos, values
 
 
-def train_knn(x, y, N=10000, r=1, method='KNN'):
+def train_knn(x, y, N=10000, r=1, method='KNN', **kwargs):
     if method == 'KNN':
         model = KNeighborsRegressor(n_neighbors=N, weights='distance', n_jobs=1)
     elif method == 'RNN':
@@ -434,7 +434,7 @@ def train_knn(x, y, N=10000, r=1, method='KNN'):
 
 
 def compute_knn(knn_function, pos, values, p0, cpu=40, **kwargs):
-    interp = train_knn(pos, values, N=kwargs.get('N_neighbours', 10000))
+    interp = train_knn(pos, values, **kwargs)
     with Pool(cpu) as pool:
         p0 = [(interp, p) for p in p0]
         qty = pool.map(knn_function, p0)
