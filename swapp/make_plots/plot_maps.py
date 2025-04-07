@@ -424,9 +424,11 @@ def make_data_to_grid(df, **kwargs):
 
 def train_knn(x, y, N_neighbours=10000, r=1, method='KNN', **kwargs):
     if method == 'KNN':
-        model = KNeighborsRegressor(n_neighbors=N_neighbours, weights='distance', n_jobs=1)
+        #model = KNeighborsRegressor(n_neighbors=N_neighbours, weights='distance', n_jobs=1)
+        model = KNeighborsRegressor(n_neighbors=N_neighbours, weights=lambda x:np.exp(-x)/np.sum(np.exp(-x)), n_jobs=1)
     elif method == 'RNN':
-        model = RadiusNeighborsRegressor(radius=r, weights='distance', n_jobs=1)
+        #model = RadiusNeighborsRegressor(radius=r, weights='distance', n_jobs=1)
+        model = RadiusNeighborsRegressor(radius=r, weights=lambda x:np.exp(-x)/np.sum(np.exp(-x)), n_jobs=1)
     else:
         raise Exception(f'The method should be either KNN or RNN, but is {method}')
     model.fit(x, y)
