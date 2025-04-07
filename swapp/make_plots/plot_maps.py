@@ -511,7 +511,7 @@ def plot_maps(interpolated_features, **kwargs):
         fig, ax[i // ncols, i % ncols] = planet_env.layout_earth_env(msh, figure=fig,
                                                                      axes=np.array([ax[i // ncols, i % ncols]]),
                                                                      y_lim=(-17, 17), z_lim=(-15, 15), x_slice=0)
-    for a in ax.flatten():
+    for a in ax.ravel():
         a.set_aspect('equal')
     fig.tight_layout()
     return fig, ax
