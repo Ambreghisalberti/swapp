@@ -648,7 +648,7 @@ def maps_by_sectors(df, feature_to_map, feature_to_slice, **kwargs):
     coord = kwargs.get('coord', 'spherical')
 
     if 'fig' in kwargs and 'ax' in kwargs:
-        fig, ax = kwargs['fig'], kwargs['ax']
+        fig, ax = kwargs.pop('fig'), kwargs.pop('ax')
         assert len(ax.ravel())>=nb_sectors, f"There are not enough subplots to plot all the slices of {feature_to_slice}"
     else:
         nrows = int(np.ceil(nb_sectors / ncols))
