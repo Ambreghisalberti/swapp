@@ -72,10 +72,7 @@ def plot_normalized_pannel(df, all_pos, featurex, featurey, fig, bins, sigma, cm
     ratio = gaussian_filter_nan_datas(ratio, sigma)
     im = ax.pcolormesh(xbins, ybins, ratio, cmap=cmap)
 
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    plt.colorbar(im, cax=cax)
-    #fig.colorbar(im, ax=ax)
+    fig.colorbar(im, ax=ax)
 
 
 def plot_relative_diff_pannel(df, all_pos, featurex, featurey, fig, bins, sigma, cmap, ax, **kwargs):
@@ -518,7 +515,14 @@ def plot_maps(interpolated_features, **kwargs):
         kwargsplot['vmax'] = kwargs.get('vmax', kwargsplot['vmax'])
 
         im = ax[i // ncols, i % ncols].pcolormesh(Ymp, Zmp, to_plot, **kwargsplot)
-        plt.colorbar(im, ax=ax[i // ncols, i % ncols])
+
+        # divider = make_axes_locatable(ax)
+        a = ax[i // ncols, i % ncols]
+        cax = fig.add_axes([a.get_position().x1 + 0.01, a.get_position().y0, 0.02, a.get_position().height])
+        # cax = divider.append_axes("right", size="5%", pad=0.05)
+        plt.colorbar(im, cax=cax)
+
+        #plt.colorbar(im, ax=ax[i // ncols, i % ncols])
 
         _,_ = planet_env.layout_earth_env(msh, figure=fig, axes=np.array([ax[i // ncols, i % ncols]]),
                                           y_lim=(-17, 17), z_lim=(-15, 15), x_slice=0)
