@@ -649,7 +649,7 @@ def maps_by_sectors(df, feature_to_map, feature_to_slice, **kwargs):
 
     if 'fig' in kwargs and 'ax' in kwargs:
         fig, ax = kwargs['fig'], kwargs['ax']
-        assert len(ax.ravel())>nb_sectors, f"There are not enough subplots to plot all the slices of {feature_to_slice}"
+        assert len(ax.ravel())>=nb_sectors, f"There are not enough subplots to plot all the slices of {feature_to_slice}"
     else:
         nrows = int(np.ceil(nb_sectors / ncols))
         fig, ax = plt.subplots(ncols=ncols, nrows=nrows, figsize=(3 * ncols, 3 * nrows))
