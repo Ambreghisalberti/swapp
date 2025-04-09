@@ -17,6 +17,7 @@ import matplotlib.patches as mpatches
 import pandas as pd
 import os
 from datetime import timedelta
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def add_spherical_coordinates(df):
@@ -70,7 +71,11 @@ def plot_normalized_pannel(df, all_pos, featurex, featurey, fig, bins, sigma, cm
     ratio[ratio == -np.float64('inf')] = np.nan
     ratio = gaussian_filter_nan_datas(ratio, sigma)
     im = ax.pcolormesh(xbins, ybins, ratio, cmap=cmap)
-    fig.colorbar(im, ax=ax)
+
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
+    #fig.colorbar(im, ax=ax)
 
 
 def plot_relative_diff_pannel(df, all_pos, featurex, featurey, fig, bins, sigma, cmap, ax, **kwargs):
