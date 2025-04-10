@@ -789,10 +789,7 @@ def get_valid(feature_to_slice, min_val, max_val, description, temp, N_neighbour
 
 
 def get_map(feature_to_map, feature_to_slice, min_val, max_val, temp, N_neighbours, coord, kwargs):
-    chosen_description = kwargs.pop('chosen_description', '')
-    if len(chosen_description) > 0:
-        chosen_description = '_' + chosen_description
-    description = make_description_from_kwargs(N_neighbours, coord, **kwargs) + chosen_description
+    description = make_description_from_kwargs(N_neighbours, coord, **kwargs)
     path = (f'/home/ghisalberti/Maps/{feature_to_map}_{feature_to_slice}_{min_val}_{max_val}_'
             + description + '.pkl')
     if not (kwargs.get('overwrite', False)) and os.path.isfile(path):
