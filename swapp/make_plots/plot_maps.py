@@ -572,10 +572,15 @@ def make_slice(df, feature, min_val, max_val):
 
 
 def make_description_from_kwargs(N_neighbours, coord, **kwargs):
+    plot_kwargs = ['ncols','nrows','min_cla','max_cla','cmap','nb_sectors', 'sectors','min_sectors','max_sectors']
+    # First order by alphabetical order, to avoid recomputing just because we gave kwargs in a different order
+    # Second, don't use plot kwargs because they have no effect on data to plot
+    keys = list(kwargs.keys())
+    keys.sort()
     description = ''
-    for k, v in kwargs.items():
-        if k != "N_neighbours" and k != 'coord' and k != 'sectors':
-            description += f'{k}={v}_'
+    for k in keys:
+        if k != "N_neighbours" and k != 'coord' and k not in plot_kwargs:
+            description += f'{k}={kwargs[k]}_'
     description += f'Nneighbours={N_neighbours}_coord={coord}'
     return description
 
