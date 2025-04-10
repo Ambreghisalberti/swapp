@@ -17,7 +17,6 @@ import matplotlib.patches as mpatches
 import pandas as pd
 import os
 from datetime import timedelta
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def add_spherical_coordinates(df):
@@ -233,13 +232,13 @@ def median_curve_transition_param(temp, feature):
 
 
 def hist_transition_param(temp, feature, transition='normalized_logNoverT', scale='linear', **kwargs):
-    bins = make_bins(scale, temp[[feature]].dropna(), feature, nb_bins=kwargs.get('nb_bins',200))
+    bins = make_bins(scale, temp[[feature]].dropna(), feature, nb_bins=kwargs.get('nb_bins', 200))
     stat, xbins, ybins, im = binned_statistic_2d(temp.normalized_logNoverT.values, temp[feature].values,
                                                  temp.normalized_logNoverT.values, statistic='count',
                                                  bins=(np.linspace(0, 1, 100), bins))
     stat[stat == 0] = np.nan
 
-    if kwargs.get('normalized',False):
+    if kwargs.get('normalized', False):
         stat = stat / np.array([np.nansum(stat, axis=1) for _ in range(len(ybins) - 1)]).T
     stat = gaussian_filter_nan_datas(stat, 1)
 
@@ -255,7 +254,7 @@ def hist_transition_param(temp, feature, transition='normalized_logNoverT', scal
     ax.set_ylabel(feature)
     ax.yaxis.set_label_coords(-0.23, 0.5)
     plt.xticks([0, 1], ['MSP', 'MSH'])
-    ax.set_title(f'Distribution of {feature}\naccross the Boundary layer depth')
+    ax.set_title(f'Distribution of {feature}\nacross the Boundary layer depth')
     ax.set_yscale(scale)
 
     infos = []
@@ -386,7 +385,7 @@ def plot_repositionned_stat_binned(df, feature, **kwargs):
 
 def make_mp_grid(**kwargs):
     N_grid = kwargs.get('N_grid', 300)
-    coord = kwargs.get('coord','spherical')
+    coord = kwargs.get('coord', 'spherical')
     if coord == 'spherical':
         th = np.linspace(0, 0.5 * np.pi, N_grid)
         ph = np.linspace(-np.pi, np.pi, 2 * N_grid)
@@ -407,11 +406,13 @@ def make_mp_grid(**kwargs):
         Ymp, Zmp = Ymp.flatten(), Zmp.flatten()
 
         model = KNeighborsRegressor(n_neighbors=1, weights='distance', n_jobs=1)
-        model.fit(np.array([Y,Z]).T, X)
+        model.fit(np.array([Y, Z]).T, X)
         Xmp = model.predict(np.array([Ymp, Zmp]).T)
-        Xmp = Xmp.reshape((N_grid,N_grid))
-        Ymp = Ymp.reshape((N_grid,N_grid))
-        Zmp = Zmp.reshape((N_grid,N_grid))
+        Xmp = Xmp.reshape((N_grid, N_grid))
+        Ymp = Ymp.reshape((N_grid, N_grid))
+        Zmp = Zmp.reshape((N_grid, N_grid))
+    else:
+        raise Exception(f'coord should be either spherical or cartesian but is {coord}.')
 
     return Xmp, Ymp, Zmp
 
@@ -427,10 +428,8 @@ def make_data_to_grid(df, **kwargs):
 def train_knn(x, y, N_neighbours=10000, r=1, method='KNN', **kwargs):
     if method == 'KNN':
         model = KNeighborsRegressor(n_neighbors=N_neighbours, weights='distance', n_jobs=1)
-        #model = KNeighborsRegressor(n_neighbors=N_neighbours, weights=lambda x:np.exp(-x)/np.sum(np.exp(-x)), n_jobs=1)
     elif method == 'RNN':
         model = RadiusNeighborsRegressor(radius=r, weights='distance', n_jobs=1)
-        #model = RadiusNeighborsRegressor(radius=r, weights=lambda x:np.exp(-x)/np.sum(np.exp(-x)), n_jobs=1)
     else:
         raise Exception(f'The method should be either KNN or RNN, but is {method}')
     model.fit(x, y)
@@ -480,62 +479,10 @@ def is_map_valid(df, **kwargs):
     return valid
 
 
-def plot_maps(interpolated_features, **kwargs):
-    features = kwargs.get('features', list(interpolated_features.keys()))
-    Xmp, Ymp, Zmp = make_mp_grid(**kwargs)
-    valid = kwargs.get('valid', np.ones(Xmp.shape))
-
-    if 'fig' not in kwargs or 'ax' not in kwargs:
-        ncols = kwargs.get('ncols', 5)
-        if len(features) < ncols:
-            ncols = len(features)
-        nrows = int(np.ceil(len(features) / ncols))
-        fig, ax = plt.subplots(ncols=ncols, nrows=nrows, figsize=(3 * ncols, 3 * nrows))
-    else:
-        fig, ax = kwargs['fig'], kwargs['ax']
-    if not isinstance(ax, np.ndarray):
-        ax = np.array([ax])
-    if len(ax.shape) == 1:
-        ax = np.array([ax])
-    nrows, ncols = ax.shape
-
-    msh = Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
-    for i, feature in enumerate(features):
-        to_plot = interpolated_features[feature].copy()
-        to_plot[valid == 0] = np.nan
-        ax[i // ncols, i % ncols].set_title(feature)
-        kwargsplot = {'cmap': kwargs.get('cmap')}
-        if kwargs.get('cmap') == 'seismic':
-            kwargsplot['vmax'] = kwargs.get('vmax', abs(np.nanmax(to_plot)))
-            kwargsplot['vmin'] = kwargs.get('vmin', -abs(np.nanmax(to_plot)))
-        else:
-            kwargsplot['vmax'] = kwargs.get('vmax', np.nanmax(to_plot))
-            kwargsplot['vmin'] = kwargs.get('vmin', np.nanmin(to_plot))
-        kwargsplot['vmin'] = kwargs.get('vmin', kwargsplot['vmin'])
-        kwargsplot['vmax'] = kwargs.get('vmax', kwargsplot['vmax'])
-
-        im = ax[i // ncols, i % ncols].pcolormesh(Ymp, Zmp, to_plot, **kwargsplot)
-
-        # divider = make_axes_locatable(ax)
-        a = ax[i // ncols, i % ncols]
-        cax = fig.add_axes([a.get_position().x1 + 0.01, a.get_position().y0, 0.02, a.get_position().height])
-        # cax = divider.append_axes("right", size="5%", pad=0.05)
-        plt.colorbar(im, cax=cax)
-
-        #plt.colorbar(im, ax=ax[i // ncols, i % ncols])
-
-        _,_ = planet_env.layout_earth_env(msh, figure=fig, axes=np.array([ax[i // ncols, i % ncols]]),
-                                          y_lim=(-17, 17), z_lim=(-15, 15), x_slice=0)
-        ax[i // ncols, i % ncols].set_aspect('equal')
-
-    fig.tight_layout()
-    return fig, ax
-
-
 def compute_and_plot_map(df, **kwargs):
     results = make_maps(df, **kwargs)
     valid = is_map_valid(df, **kwargs)
-    _,_ = plot_maps(results, valid=valid, **kwargs)
+    _, _ = plot_maps(results, valid=valid, **kwargs)
     return results, valid
 
 
@@ -637,6 +584,7 @@ def make_sectors(df, feature, **kwargs):
     if 'min_sectors' in kwargs and 'max_sectors' in kwargs:
         min_sectors = kwargs['min_sectors']
         max_sectors = kwargs['max_sectors']
+        nb_sectors = len(min_sectors)
     elif 'sectors' in kwargs:
         sectors = kwargs['sectors']
         nb_sectors = len(sectors) - 1
@@ -646,60 +594,6 @@ def make_sectors(df, feature, **kwargs):
         sectors = np.linspace(np.nanmin(df[feature].values), np.nanmax(df[feature].values), nb_sectors + 1)
         min_sectors, max_sectors = sectors[:-1], sectors[1:]
     return nb_sectors, min_sectors, max_sectors
-
-
-def maps_by_sectors(df, feature_to_map, feature_to_slice, **kwargs):
-    nb_sectors, min_sectors, max_sectors = make_sectors(df, feature_to_slice, **kwargs)
-
-    max_distance = kwargs.pop('max_distance', 3)
-    N_neighbours = kwargs.pop('N_neighbours', 500)
-    ncols = kwargs.get('ncols', 3)
-    coord = kwargs.get('coord', 'spherical')
-
-    if 'fig' in kwargs and 'ax' in kwargs:
-        fig, ax = kwargs.pop('fig'), kwargs.pop('ax')
-        assert len(ax.ravel()) >= nb_sectors, (f"There are not enough subplots to plot all the slices of "
-                                               f"{feature_to_slice}")
-    else:
-        nrows = int(np.ceil(nb_sectors / ncols))
-        fig, ax = plt.subplots(ncols=ncols, nrows=nrows, figsize=(3 * ncols, 3 * nrows))
-    if len(ax.shape) == 1:
-        ax = np.array([ax])
-    ncols = len(ax[0])
-
-    for i in range(nb_sectors):
-        temp = make_slice(df, feature_to_slice, min_sectors[i], max_sectors[i])
-
-        description = make_description_from_kwargs(N_neighbours, coord, **kwargs)
-        path = (f'/home/ghisalberti/Maps/{feature_to_map}_{feature_to_slice}_{min_sectors[i]}_{max_sectors[i]}_'
-                + description + '.pkl')
-        if not(kwargs.get('overwrite',False)) and os.path.isfile(path):
-            results = pd.read_pickle(path)
-        else:
-            if len(temp) > N_neighbours:
-                results = make_maps(temp, features=[feature_to_map], N_neighbours=N_neighbours, **kwargs)
-            else:
-                results = make_maps(temp, features=[feature_to_map], N_neighbours=int(N_neighbours//4), **kwargs)
-
-            pd.to_pickle(results, path)
-
-        # Validity
-        path = (f'/home/ghisalberti/Maps/validity_{feature_to_slice}_{min_sectors[i]}_{max_sectors[i]}_'
-                + description + '.pkl')
-        if not(kwargs.get('overwrite',False)) and os.path.isfile(path):
-            valid = pd.read_pickle(path)
-        else:
-            valid = is_map_valid(temp, N_neighbours=N_neighbours, max_distance=max_distance, **kwargs)
-            pd.to_pickle(valid, path)
-        _,_ = plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols], valid=valid, **kwargs)
-        ax[i // ncols, i % ncols].set_title(
-            f'{feature_to_map}\nfor {round(min_sectors[i], 2)} < {feature_to_slice} < {round(max_sectors[i], 2)}\n'
-            f'{len(temp)} points')
-        if feature_to_slice == 'omni_CLA':
-            plot_CLA_sector(14, 12, 2.5, min_sectors[i], max_sectors[i], ax[i // ncols, i % ncols])
-
-    fig.tight_layout()
-    return fig, ax
 
 
 def add_speed_arrows(ax, length_arrow=1, **kwargs):
@@ -740,7 +634,6 @@ def add_speed_arrows(ax, length_arrow=1, **kwargs):
 
 def associate_SW_Safrankova(X_sat, omni, BS_standoff, dtm=0, sampling_time='5S', vx_median=-406.2):
     if dtm != 0:
-        # vxmean = abs(omni.Vx.rolling(dt,min_periods=1).mean())
         vxmean = abs(omni.Vx.rolling(int((2*dtm+1)*timedelta(minutes=1)/(omni.index[-1]-omni.index[-2])),
                                      center=True, min_periods=1).mean())
     else:
@@ -757,3 +650,291 @@ def associate_SW_Safrankova(X_sat, omni, BS_standoff, dtm=0, sampling_time='5S',
     OMNI = pd.concat([OMNI, omni.loc[time]])
     OMNI.index = X_sat.index
     return OMNI
+
+
+def get_kwargsplot(to_plot, **kwargs):
+    kwargsplot = {'cmap': kwargs.get('cmap')}
+    if kwargs.get('cmap') == 'seismic' or kwargs.get('cmap') == 'coolwarm':
+        kwargsplot['vmax'] = kwargs.get('vmax', abs(np.nanmax(to_plot)))
+        kwargsplot['vmin'] = kwargs.get('vmin', -abs(np.nanmax(to_plot)))
+    else:
+        kwargsplot['vmax'] = kwargs.get('vmax', np.nanmax(to_plot))
+        kwargsplot['vmin'] = kwargs.get('vmin', np.nanmin(to_plot))
+    kwargsplot['vmin'] = kwargs.get('vmin', kwargsplot['vmin'])
+    kwargsplot['vmax'] = kwargs.get('vmax', kwargsplot['vmax'])
+    return kwargsplot
+
+
+def plot_colorbar_next_to_axis(im, fig, ax):
+    xmin = ax.get_position().x0
+    xmax = ax.get_position().x1
+    ymin = ax.get_position().y0
+    ymax = ax.get_position().y1
+    xwidth = xmax - xmin
+    ywidth = ymax - ymin
+    cax = fig.add_axes([xmax * 1.1, ymin + 0.1 * ywidth, xwidth * 0.05, ywidth * 0.75])
+    cb = plt.colorbar(im, cax=cax)
+    cb.ax.tick_params(labelsize='small')
+
+
+def plot_colorbar_separate_axis(im, fig, ax):
+    ax.axis("off")
+    cb = plt.colorbar(im, ax=ax, location='left')
+    cb.ax.tick_params(labelsize='small')
+
+
+def plot_colorbar(im, fig, ax, method='separate_axis'):
+    if method == 'separate_axis':
+        plot_colorbar_separate_axis(im, fig, ax)
+    elif method == 'next_to_axis':
+        plot_colorbar_next_to_axis(im, fig, ax)
+    else:
+        raise Exception(
+            f"Only separate_axis and next_to_axis methods have been implemented for plotting the colorbar, but {method}"
+            f" was asked for.")
+
+
+def make_ax_2D(ax):
+    if not isinstance(ax, np.ndarray):
+        ax = np.array([ax])
+    if len(ax.shape) == 1:
+        ax = np.array([ax])
+    return ax
+
+
+def get_fig_ax(features, **kwargs):
+    if 'fig' not in kwargs or 'ax' not in kwargs:
+        ncols = kwargs.get('ncols', 5)
+        if len(features) < ncols:
+            ncols = len(features)
+        nrows = int(np.ceil(len(features) / ncols))
+        fig, ax = plt.subplots(ncols=ncols, nrows=nrows, figsize=(3 * ncols, 3 * nrows))
+    else:
+        fig, ax = kwargs['fig'], kwargs['ax']
+    ax = make_ax_2D(ax)
+    nrows, ncols = ax.shape
+    return fig, ax, nrows, ncols, kwargs
+
+
+def plot_maps(interpolated_features, **kwargs):
+    features = kwargs.get('features', list(interpolated_features.keys()))
+    Xmp, Ymp, Zmp = make_mp_grid(**kwargs)
+    valid = kwargs.get('valid', np.ones(Xmp.shape))
+
+    fig, ax, nrows, ncols, kwargs = get_fig_ax(features, **kwargs)
+
+    msh = Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
+    for i, feature in enumerate(features):
+        a = ax[i // ncols, i % ncols]
+
+        to_plot = interpolated_features[feature].copy()
+        to_plot[valid == 0] = np.nan
+        kwargsplot = get_kwargsplot(to_plot, **kwargs)
+        im = a.pcolormesh(Ymp, Zmp, to_plot, **kwargsplot)
+
+        a.tick_params(labelsize='small')
+        a.set_title(feature)
+        if kwargs.get('show_colorbar', True):
+            if kwargs.get('method_show_colorbar', 'separate_axis') == 'separate_axis':
+                plot_colorbar(im, fig, ax[i // ncols, i % ncols + 1])
+            else:
+                plot_colorbar(im, fig, a, method=kwargs.get('method_show_colorbar'))
+        _, _ = planet_env.layout_earth_env(msh, figure=fig, axes=np.array([a]),
+                                           y_lim=(-17, 17), z_lim=(-15, 15), x_slice=0)
+        if not (kwargs.get('show_ylabel', False)):
+            a.set_ylabel('')
+        a.axis('equal')
+
+    fig.tight_layout()
+    return fig, ax
+
+
+def update_vmin_vmax(results, feature_to_map, vmin, vmax, nb_iter, kwargs):
+    if nb_iter == 0 and (('vmin' not in kwargs) or ('vmax' not in 'kwargs')):
+        vmin_temp, vmax_temp = np.nanmin(results[feature_to_map]), np.nanmax(results[feature_to_map])
+        if vmin_temp < vmin:
+            vmin = vmin_temp
+        if vmax_temp > vmax:
+            vmax = vmax_temp
+    return vmin, vmax
+
+
+def manage_vmin_vmax(vmin, vmax, nb_iter, kwargs):
+    if nb_iter == 1:
+        if 'vmin' not in kwargs:
+            kwargs['vmin'] = vmin
+        if 'vmax' not in kwargs:
+            kwargs['vmax'] = vmax
+        if kwargs.get('cmap', 'jet') == 'seismic' or kwargs.get('cmap', 'jet') == 'coolwarm':
+            vmin, vmax = kwargs['vmin'], kwargs['vmax']
+            vmin, vmax = -max(abs(vmin), abs(vmax)), max(abs(vmin), abs(vmax))
+            kwargs['vmin'], kwargs['vmax'] = vmin, vmax
+    return kwargs
+
+
+def get_valid(feature_to_slice, min_val, max_val, description, temp, N_neighbours, max_distance, kwargs):
+    path = (f'/home/ghisalberti/Maps/validity_{feature_to_slice}_{min_val}_{max_val}_'
+            + description + '.pkl')
+    if not (kwargs.get('overwrite', False)) and os.path.isfile(path):
+        valid = pd.read_pickle(path)
+    else:
+        valid = is_map_valid(temp, N_neighbours=N_neighbours, max_distance=max_distance, **kwargs)
+        pd.to_pickle(valid, path)
+    return valid
+
+
+def get_map(feature_to_map, feature_to_slice, min_val, max_val, temp, N_neighbours, coord, kwargs):
+    chosen_description = kwargs.pop('chosen_description', '')
+    if len(chosen_description) > 0:
+        chosen_description = '_' + chosen_description
+    description = make_description_from_kwargs(N_neighbours, coord, **kwargs) + chosen_description
+    path = (f'/home/ghisalberti/Maps/{feature_to_map}_{feature_to_slice}_{min_val}_{max_val}_'
+            + description + '.pkl')
+    if not (kwargs.get('overwrite', False)) and os.path.isfile(path):
+        results = pd.read_pickle(path)
+    else:
+        if len(temp) > N_neighbours:
+            results = make_maps(temp, features=[feature_to_map], N_neighbours=N_neighbours, **kwargs)
+        else:
+            results = make_maps(temp, features=[feature_to_map], N_neighbours=int(N_neighbours // 4), **kwargs)
+        pd.to_pickle(results, path)
+    return results, description
+
+
+def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_sectors, vmin, vmax, nb_iter,
+                       N_neighbours, coord,
+                       max_distance, fig, ax, i, ncols, show_ylabel, show_colorbar, kwargs):
+    temp = make_slice(df, feature_to_slice, min_sectors[i], max_sectors[i])
+    results, description = get_map(feature_to_map, feature_to_slice, min_sectors[i], max_sectors[i], temp, N_neighbours,
+                                   coord, kwargs)
+    vmin, vmax = update_vmin_vmax(results, feature_to_map, vmin, vmax, nb_iter, kwargs)
+    valid = get_valid(feature_to_slice, min_sectors[i], max_sectors[i], description, temp, N_neighbours, max_distance,
+                      kwargs)
+
+    if nb_iter == 1:
+        a = ax[i // ncols, i % ncols]
+        _, _ = plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols:i % ncols + 2], valid=valid,
+                         show_ylabel=show_ylabel, show_colorbar=show_colorbar, **kwargs)
+        a.set_title(
+            f'{feature_to_map}\nfor {round(min_sectors[i], 2)} < {feature_to_slice} < {round(max_sectors[i], 2)}\n'
+            f'{len(temp)} points', fontsize='medium')  # , fontsize=7)
+        if feature_to_slice == 'omni_CLA':
+            plot_CLA_sector(12, 14, 2.5, min_sectors[i], max_sectors[i], a)
+    return vmin, vmax
+
+
+def maps_by_sectors(df, feature_to_map, feature_to_slice, **kwargs):
+    show_colorbar = kwargs.pop('show_colorbar', True)
+    show_ylabel = kwargs.pop('show_ylabel', True)
+    nb_sectors, min_sectors, max_sectors = make_sectors(df, feature_to_slice, **kwargs)
+
+    max_distance = kwargs.pop('max_distance', 3)
+    N_neighbours = kwargs.pop('N_neighbours', 500)
+    ncols = kwargs.get('ncols', 3)
+    coord = kwargs.get('coord', 'spherical')
+
+    if 'fig' in kwargs and 'ax' in kwargs:
+        fig, ax = kwargs.pop('fig'), kwargs.pop('ax')
+        nrows = len(ax)
+        assert len(ax.ravel()) >= nb_sectors + nrows, (f"There are not enough subplots to plot all the slices of "
+                                                       f"{feature_to_slice}, plus the colorbars.")
+    else:
+        nrows = int(np.ceil(nb_sectors / ncols))
+        fig, ax = plt.subplots(ncols=ncols + 1, nrows=nrows, figsize=(3 * ncols, 3 * nrows),
+                               sharey=True)  # +1 for the colorbars
+
+    ax = make_ax_2D(ax)
+    ncols = len(ax[0]) - 1  # to leave the last column for colorbars
+
+    vmin = kwargs.get('vmin', float('inf'))
+    vmax = kwargs.get('vmax', -float('inf'))
+
+    for nb_iter in range(2):
+        kwargs = manage_vmin_vmax(vmin, vmax, nb_iter, kwargs)
+
+        for i in range(nb_sectors):
+            vmin, vmax = compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_sectors, vmin, vmax,
+                                            nb_iter, N_neighbours, coord,
+                                            max_distance, fig, ax, i, ncols, show_ylabel and ((i % ncols) == 0),
+                                            show_colorbar and (((i % ncols) == (ncols - 1)) or i == (nb_sectors - 1)),
+                                            kwargs)
+
+    for a in ax[-1, i % ncols + 1:]:
+        a.axis('off')
+    ax[0, 0].set_ylim(-17, 17)
+    fig.suptitle(kwargs.get('chosen_description', ''))
+    fig.tight_layout()
+    return fig, ax
+
+
+def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwargs):
+    show_colorbar = kwargs.pop('show_colorbar', True)
+    show_ylabel = kwargs.pop('show_ylabel', True)
+    nb_sectors, min_sectors, max_sectors = make_sectors(df, feature_to_slice, **kwargs)
+
+    max_distance = kwargs.pop('max_distance', 3)
+    N_neighbours = kwargs.pop('N_neighbours', 500)
+    ncols = kwargs.get('ncols', 3)
+    coord = kwargs.get('coord', 'spherical')
+
+    if 'fig' in kwargs and 'ax' in kwargs:
+        fig, ax = kwargs.pop('fig'), kwargs.pop('ax')
+        nrows = len(ax)
+        assert len(ax.ravel()) >= nb_sectors + nrows + 2, (f"There are not enough subplots to plot all the slices of "
+                                                           f"{feature_to_slice}, plus the colorbars, "
+                                                           f"plus reference MSP and MSH.")
+    else:
+        nrows = int(np.ceil((nb_sectors + 2) / ncols))  # +2 for reference MSP and MSH
+        fig, ax = plt.subplots(ncols=ncols + 1, nrows=nrows, figsize=(3 * ncols, 3 * nrows),
+                               sharey=True)  # +1 for the colorbars
+
+    ax = make_ax_2D(ax)
+    ncols = len(ax[0]) - 1  # to leave the last column for colorbars
+
+    vmin = kwargs.get('vmin', float('inf'))
+    vmax = kwargs.get('vmax', -float('inf'))
+
+    min_sectors = np.array([np.nan] + list(min_sectors))
+    max_sectors = np.array([np.nan] + list(max_sectors))
+    for nb_iter in range(2):
+        kwargs = manage_vmin_vmax(vmin, vmax, nb_iter, kwargs)
+
+        for i in range(nb_sectors):
+            vmin, vmax = compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_sectors, vmin, vmax,
+                                            nb_iter, N_neighbours, coord,
+                                            max_distance, fig, ax, i + 1, ncols, show_ylabel and ((i % ncols) == 0),
+                                            show_colorbar and ((((i + 1) % ncols) == (ncols - 1)) or i == nb_sectors),
+                                            kwargs)
+
+        results, description = get_map(feature_to_map + '_MSP', 'None', 0, 0, df,
+                                       N_neighbours, coord, kwargs)
+        vmin, vmax = update_vmin_vmax(results, feature_to_map + '_MSP', vmin, vmax, nb_iter, kwargs)
+        valid = get_valid('None', 0, 0, description, df, N_neighbours, max_distance, kwargs)
+
+        if nb_iter == 1:
+            _, _ = plot_maps(results, valid=valid, fig=fig, ax=ax[0, 0], show_colorbar=False, show_ylabel=True,
+                             **kwargs)
+            ax[0, 0].set_title(f'{feature_to_map} for KNN\nin neighbouring MSP\n{len(df)} points',
+                               fontsize='medium')
+            plot_CLA_sector(12, 14, 2.5, kwargs.get('min_cla',0), kwargs.get('max_cla',0), ax[0, 0])
+
+        # MSH
+        results, _ = get_map(feature_to_map + '_MSH', 'None', 0, 0, df, N_neighbours,
+                             coord, kwargs)
+        vmin, vmax = update_vmin_vmax(results, feature_to_map + '_MSH', vmin, vmax, nb_iter, kwargs)
+        if nb_iter == 1:
+            _, _ = plot_maps(results, valid=valid, fig=fig, ax=ax.ravel()[nb_sectors + nrows:nb_sectors + nrows + 2],
+                             show_ylabel=False, **kwargs)
+            ax.ravel()[nb_sectors + nrows].set_title(
+                f'{feature_to_map} for KNN\nin neighbouring MSH\n{len(df)} points', fontsize='medium')
+            plot_CLA_sector(12, 14, 2.5, kwargs.get('min_cla', 0), kwargs.get('max_cla', 0),
+                            ax.ravel()[nb_sectors + nrows])
+            # ax.ravel()[nb_sectors+nrows].set_xlim(-17,17)
+
+    for a in ax[-1, (i + 2) % ncols + 1:]:
+        a.axis('off')
+    ax[0, 0].set_ylim(-17, 17)
+
+    fig.suptitle(kwargs.get('chosen_description', ''))
+    fig.tight_layout()
+    return fig, ax
