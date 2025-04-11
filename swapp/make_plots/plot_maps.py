@@ -778,7 +778,7 @@ def manage_vmin_vmax(vmin, vmax, nb_iter, kwargs):
 
 
 def get_valid(feature_to_slice, min_val, max_val, description, temp, N_neighbours, max_distance, kwargs):
-    path = (f'/home/ghisalberti/Maps/validity_{feature_to_slice}_{min_val}_{max_val}_'
+    path = (f'/home/ghisalberti/Maps/data/validity_{feature_to_slice}_{min_val}_{max_val}_'
             + description + '.pkl')
     if not (kwargs.get('overwrite', False)) and os.path.isfile(path):
         valid = pd.read_pickle(path)
