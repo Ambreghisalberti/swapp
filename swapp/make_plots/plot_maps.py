@@ -618,7 +618,7 @@ def add_speed_arrows(ax, length_arrow=1, **kwargs):
         results_Vz = pd.read_pickle(f'/home/ghisalberti/Maps/gap_to_MSH_Vz_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
                                     f'Nneighbours={N_neighbours}_coord={coord}.pkl')['gap_to_MSH_Vz']
         valid = pd.read_pickle(
-            f'/home/ghisalberti/Maps/validity_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
+            f'/home/ghisalberti/Maps/data/validity_CLA_{sectors_CLA[i]}_{sectors_CLA[i + 1]}_'
             f'Nneighbours={N_neighbours}_maxdistance={max_distance}_coord={coord}.pkl')
         results_Vy[valid == 0] = np.nan
         results_Vz[valid == 0] = np.nan
@@ -790,7 +790,7 @@ def get_valid(feature_to_slice, min_val, max_val, description, temp, N_neighbour
 
 def get_map(feature_to_map, feature_to_slice, min_val, max_val, temp, N_neighbours, coord, kwargs):
     description = make_description_from_kwargs(N_neighbours, coord, **kwargs)
-    path = (f'/home/ghisalberti/Maps/{feature_to_map}_{feature_to_slice}_{min_val}_{max_val}_'
+    path = (f'/home/ghisalberti/Maps/data/{feature_to_map}_{feature_to_slice}_{min_val}_{max_val}_'
             + description + '.pkl')
     if not (kwargs.get('overwrite', False)) and os.path.isfile(path):
         results = pd.read_pickle(path)
