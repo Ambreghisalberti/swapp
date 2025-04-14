@@ -107,8 +107,51 @@ def check_z_unitary(theta, phi, **kwargs):
     return sum_value
 
 
-def check(vx, vy, vz, theta, phi):
+def check_cartesian_to_tangential(vx, vy, vz, theta, phi):
     vtan1 = V_tan1_to_Shue(theta, phi, vx, vy, vz)
     vtan2 = V_tan2_to_Shue(theta, phi, vx, vy, vz)
     vn = V_normal_to_Shue(theta, phi, vx, vy, vz)
     return abs(np.sqrt(vtan1**2+vtan2**2+vn**2)-np.sqrt(vx**2+vy**2+vz**2))/np.sqrt(vx**2+vy**2+vz**2)
+
+
+def Vx_from_tangential(theta, phi, vtan1, vtan2, vn, **kwargs):
+    r0, alpha = get_shue_params(**kwargs)
+    const = 2 * alpha * np.sin(theta) / (1 + np.cos(theta))
+    denominateur = np.sqrt(1 + const ** 2)
+    a = (const*np.cos(theta)-np.sin(theta))
+    b = np.sin(phi)*(np.cos(theta)+const*np.sin(theta))
+    c = np.cos(phi)*(np.cos(theta)+const*np.sin(theta))
+    return (a*vtan1 + b*vtan2 + c*vn)/denominateur
+
+
+def Vy_from_tangential(theta, phi, vtan1, vtan2, vn, **kwargs):
+    return np.cos(phi)*vtan2 - np.sin(phi)*vn
+
+
+def Vz_from_tangential(theta, phi, vtan1, vtan2, vn, **kwargs):
+    r0, alpha = get_shue_params(**kwargs)
+    const = 2 * alpha * np.sin(theta) / (1 + np.cos(theta))
+    denominateur = np.sqrt(1 + const ** 2)
+    a = (const*np.sin(theta)+np.cos(theta))
+    b = np.sin(phi)*(np.sin(theta)-const*np.cos(theta))
+    c = np.cos(phi)*(np.sin(theta)-const*np.cos(theta))
+    return (a*vtan1 + b*vtan2 + c*vn)/denominateur
+
+
+def check_tangential_to_cartesian(vtan1, vtan2, vn, theta, phi):
+    vx = Vx_from_tangential(theta, phi, vtan1, vtan2, vn)
+    vy = Vy_from_tangential(theta, phi, vtan1, vtan2, vn)
+    vz = Vz_from_tangential(theta, phi, vtan1, vtan2, vn)
+    return abs(np.sqrt(vx**2+vy**2+vz**2)-np.sqrt(vtan1**2+vtan2**2+vn**2))/np.sqrt(vtan1**2+vtan2**2+vn**2)
+
+def check_transformations(vx, vy, vz, theta, phi):
+    vtan1 = V_tan1_to_Shue(theta, phi, vx, vy, vz)
+    vtan2 = V_tan2_to_Shue(theta, phi, vx, vy, vz)
+    vn = V_normal_to_Shue(theta, phi, vx, vy, vz)
+
+    vx_bis = Vx_from_tangential(theta, phi, vtan1, vtan2, vn)
+    vy_bis = Vy_from_tangential(theta, phi, vtan1, vtan2, vn)
+    vz_bis = Vz_from_tangential(theta, phi, vtan1, vtan2, vn)
+
+    return abs(np.sqrt(vx_bis ** 2 + vy_bis ** 2 + vz_bis ** 2) - np.sqrt(vx ** 2 + vy ** 2 + vz ** 2)) / np.sqrt(
+        vx_bis ** 2 + vy_bis ** 2 + vz_bis ** 2)

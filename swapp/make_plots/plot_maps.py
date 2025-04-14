@@ -456,6 +456,8 @@ def make_maps(df, **kwargs):
 
     pos, values = make_data_to_grid(df, **kwargs)
 
+    if kwargs.get('N_neighbours_method') == 'automatic':
+        kwargs['N_neighbours'] = int(len(df) * kwargs.get('N_neighbours_proportion', 0.1))
     interpolated_values = compute_knn(f_interp, pos, values, np.asarray([Xmp, Ymp, Zmp]).T, **kwargs).T
     interpolated_values = {feat: values for feat, values in
                            zip(kwargs.get('features', list(df.columns.values)), interpolated_values)}
@@ -837,6 +839,7 @@ def maps_by_sectors(df, feature_to_map, feature_to_slice, **kwargs):
 
     if 'fig' in kwargs and 'ax' in kwargs:
         fig, ax = kwargs.pop('fig'), kwargs.pop('ax')
+        ax = make_ax_2D(ax)
         nrows = len(ax)
         assert len(ax.ravel()) >= nb_sectors + nrows, (f"There are not enough subplots to plot all the slices of "
                                                        f"{feature_to_slice}, plus the colorbars.")
