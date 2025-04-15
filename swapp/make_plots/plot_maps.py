@@ -28,34 +28,37 @@ def add_spherical_coordinates(df):
 
 
 def gaussian_filter_nan_datas(df, sigma):
-    # Get the coordinates of the non-NaN values
-    nan_mask = np.isnan(df)
-    x, y = np.indices(df.shape)
-    valid_points = ~nan_mask
-    points = np.vstack((x[valid_points], y[valid_points])).T
-    values = df[valid_points]
-    # Interpolate the NaN values based on the surrounding values linearly
-    interpolated_arr = df.copy()
-    interpolated_arr[nan_mask] = griddata(points, values, (x[nan_mask], y[nan_mask]), method='linear')
-    assert np.isnan(interpolated_arr).sum() <= nan_mask.sum(), "The first interpolation step adds NaNs."
+    if sigma > 0:
+        # Get the coordinates of the non-NaN values
+        nan_mask = np.isnan(df)
+        x, y = np.indices(df.shape)
+        valid_points = ~nan_mask
+        points = np.vstack((x[valid_points], y[valid_points])).T
+        values = df[valid_points]
+        # Interpolate the NaN values based on the surrounding values linearly
+        interpolated_arr = df.copy()
+        interpolated_arr[nan_mask] = griddata(points, values, (x[nan_mask], y[nan_mask]), method='linear')
+        assert np.isnan(interpolated_arr).sum() <= nan_mask.sum(), "The first interpolation step adds NaNs."
 
-    # Red-do a step to also fill the ones that are not surrounded by values (nearest inseatd of linear)
-    nan_mask2 = np.isnan(interpolated_arr)
-    x, y = np.indices(interpolated_arr.shape)
-    valid_points = ~nan_mask2
-    points = np.vstack((x[valid_points], y[valid_points])).T
-    values = interpolated_arr[valid_points]
-    interpolated_arr[nan_mask2] = griddata(points, values, (x[nan_mask2], y[nan_mask2]), method='nearest')
-    assert np.isnan(
-        interpolated_arr).sum() == 0, "The Nanfilling steps have not workdes : there still are Nans in the array."
+        # Red-do a step to also fill the ones that are not surrounded by values (nearest inseatd of linear)
+        nan_mask2 = np.isnan(interpolated_arr)
+        x, y = np.indices(interpolated_arr.shape)
+        valid_points = ~nan_mask2
+        points = np.vstack((x[valid_points], y[valid_points])).T
+        values = interpolated_arr[valid_points]
+        interpolated_arr[nan_mask2] = griddata(points, values, (x[nan_mask2], y[nan_mask2]), method='nearest')
+        assert np.isnan(
+            interpolated_arr).sum() == 0, "The Nanfilling steps have not workdes : there still are Nans in the array."
 
-    # Apply the Gaussian filter to the interpolated array, and add again the initial nans
-    filtered_arr = gaussian_filter(interpolated_arr, sigma=sigma)
-    filtered_arr[nan_mask] = np.nan
+        # Apply the Gaussian filter to the interpolated array, and add again the initial nans
+        filtered_arr = gaussian_filter(interpolated_arr, sigma=sigma)
+        filtered_arr[nan_mask] = np.nan
 
-    assert np.isnan(filtered_arr).sum() == nan_mask.sum(), (
-        "The gaussian filter should not add ""or remove any NaN value.")
-    return filtered_arr
+        assert np.isnan(filtered_arr).sum() == nan_mask.sum(), (
+            "The gaussian filter should not add ""or remove any NaN value.")
+        return filtered_arr
+    else:
+        return df
 
 
 def plot_normalized_pannel(df, all_pos, featurex, featurey, fig, bins, sigma, cmap, ax):
@@ -736,6 +739,7 @@ def plot_maps(interpolated_features, **kwargs):
 
         to_plot = interpolated_features[feature].copy()
         to_plot[valid == 0] = np.nan
+        to_plot = gaussian_filter_nan_datas(to_plot, kwargs.get('sigma', 0))
         kwargsplot = get_kwargsplot(to_plot, **kwargs)
         im = a.pcolormesh(Ymp, Zmp, to_plot, **kwargsplot)
 
@@ -790,10 +794,7 @@ def get_valid(feature_to_slice, min_val, max_val, description, temp, N_neighbour
     return valid
 
 
-def get_map(feature_to_map, feature_to_slice, min_val, max_val, temp, N_neighbours, coord, kwargs):
-    description = make_description_from_kwargs(N_neighbours, coord, **kwargs)
-    path = (f'/home/ghisalberti/Maps/data/{feature_to_map}_{feature_to_slice}_{min_val}_{max_val}_'
-            + description + '.pkl')
+def get_map_from_path(path, feature_to_map, temp, N_neighbours, kwargs):
     if not (kwargs.get('overwrite', False)) and os.path.isfile(path):
         results = pd.read_pickle(path)
     else:
@@ -802,6 +803,22 @@ def get_map(feature_to_map, feature_to_slice, min_val, max_val, temp, N_neighbou
         else:
             results = make_maps(temp, features=[feature_to_map], N_neighbours=int(N_neighbours // 4), **kwargs)
         pd.to_pickle(results, path)
+    return results
+
+
+def get_map_slice(feature_to_map, feature_to_slice, min_val, max_val, temp, N_neighbours, coord, kwargs):
+    description = make_description_from_kwargs(N_neighbours, coord, **kwargs)
+    path = (f'/home/ghisalberti/Maps/data/{feature_to_map}_{feature_to_slice}_{min_val}_{max_val}_'
+            + description + '.pkl')
+    results = get_map_from_path(path, feature_to_map, temp, N_neighbours, kwargs)
+    return results, description
+
+
+def get_map(feature_to_map, temp, N_neighbours, coord, kwargs):
+    description = make_description_from_kwargs(N_neighbours, coord, **kwargs)
+    path = (f'/home/ghisalberti/Maps/data/{feature_to_map}_'
+            + description + '.pkl')
+    results = get_map_from_path(path, feature_to_map, temp, N_neighbours, kwargs)
     return results, description
 
 
@@ -809,7 +826,7 @@ def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_se
                        N_neighbours, coord,
                        max_distance, fig, ax, i, ncols, show_ylabel, show_colorbar, kwargs):
     temp = make_slice(df, feature_to_slice, min_sectors[i], max_sectors[i])
-    results, description = get_map(feature_to_map, feature_to_slice, min_sectors[i], max_sectors[i], temp, N_neighbours,
+    results, description = get_map_slice(feature_to_map, feature_to_slice, min_sectors[i], max_sectors[i], temp, N_neighbours,
                                    coord, kwargs)
     vmin, vmax = update_vmin_vmax(results, feature_to_map, vmin, vmax, nb_iter, kwargs)
     valid = get_valid(feature_to_slice, min_sectors[i], max_sectors[i], description, temp, N_neighbours, max_distance,
@@ -911,8 +928,7 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
                                             show_colorbar and ((((i + 1) % ncols) == (ncols - 1)) or i == nb_sectors),
                                             kwargs)
 
-        results, description = get_map(feature_to_map + '_MSP', 'None', 0, 0, df,
-                                       N_neighbours, coord, kwargs)
+        results, description = get_map(feature_to_map + '_MSP', df, N_neighbours, coord, kwargs)
         vmin, vmax = update_vmin_vmax(results, feature_to_map + '_MSP', vmin, vmax, nb_iter, kwargs)
         valid = get_valid('None', 0, 0, description, df, N_neighbours, max_distance, kwargs)
 
@@ -924,8 +940,7 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
             plot_CLA_sector(12, 14, 2.5, kwargs.get('min_cla',0), kwargs.get('max_cla',0), ax[0, 0])
 
         # MSH
-        results, _ = get_map(feature_to_map + '_MSH', 'None', 0, 0, df, N_neighbours,
-                             coord, kwargs)
+        results, _ = get_map(feature_to_map + '_MSH', df, N_neighbours, coord, kwargs)
         vmin, vmax = update_vmin_vmax(results, feature_to_map + '_MSH', vmin, vmax, nb_iter, kwargs)
         if nb_iter == 1:
             _, _ = plot_maps(results, valid=valid, fig=fig, ax=ax.ravel()[nb_sectors + nrows:nb_sectors + nrows + 2],
