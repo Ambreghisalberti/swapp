@@ -885,8 +885,6 @@ def maps_by_sectors(df, feature_to_map, feature_to_slice, **kwargs):
                                             max_distance, fig, ax, i, ncols, show_ylabel and ((i % ncols) == 0),
                                             show_colorbar and (((i % ncols) == (ncols - 1)) or i == (nb_sectors - 1)),
                                             kwargs)
-            if kwargs.get('show_arrows', False):
-                Ymp, Zmp, Vy, Vz = get_arrows_coordinates(temp, **kwargs)
 
     for a in ax[-1, i % ncols + 1:]:
         a.axis('off')
