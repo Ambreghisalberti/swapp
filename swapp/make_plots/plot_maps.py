@@ -17,6 +17,7 @@ import matplotlib.patches as mpatches
 import pandas as pd
 import os
 from datetime import timedelta
+from spok.models.planetary import mp_shue1998_normal, mp_shue1998_tangents
 
 
 def add_spherical_coordinates(df):
@@ -487,7 +488,7 @@ def is_map_valid(df, **kwargs):
 def compute_and_plot_map(df, **kwargs):
     results = make_maps(df, **kwargs)
     valid = is_map_valid(df, **kwargs)
-    _, _ = plot_maps(results, valid=valid, **kwargs)
+    _, _ = plot_maps(df, results, valid=valid, **kwargs)
     return results, valid
 
 
@@ -727,7 +728,7 @@ def get_fig_ax(features, **kwargs):
     return fig, ax, nrows, ncols, kwargs
 
 
-def plot_maps(interpolated_features, **kwargs):
+def plot_maps(df, interpolated_features, **kwargs):
     features = kwargs.get('features', list(interpolated_features.keys()))
     Xmp, Ymp, Zmp = make_mp_grid(**kwargs)
     valid = kwargs.get('valid', np.ones(Xmp.shape))
@@ -756,6 +757,10 @@ def plot_maps(interpolated_features, **kwargs):
         if not (kwargs.get('show_ylabel', False)):
             a.set_ylabel('')
         a.axis('equal')
+
+    if kwargs.get('plot_arrows', False):
+        Ymp, Zmp, Vy, Vz = get_arrows_coordinates(df, **kwargs)
+        plot_arrows(a, Ymp, Zmp, Vy, Vz, **kwargs)
 
     fig.tight_layout()
     return fig, ax
@@ -835,7 +840,7 @@ def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_se
 
     if nb_iter == 1:
         a = ax[i // ncols, i % ncols]
-        _, _ = plot_maps(results, fig=fig, ax=ax[i // ncols, i % ncols:i % ncols + 2], valid=valid,
+        _, _ = plot_maps(temp, results, fig=fig, ax=ax[i // ncols, i % ncols:i % ncols + 2], valid=valid,
                          show_ylabel=show_ylabel, show_colorbar=show_colorbar, **kwargs)
         a.set_title(
             f'{feature_to_map}\nfor {round(min_sectors[i], 2)} < {feature_to_slice} < {round(max_sectors[i], 2)}\n'
@@ -880,6 +885,8 @@ def maps_by_sectors(df, feature_to_map, feature_to_slice, **kwargs):
                                             max_distance, fig, ax, i, ncols, show_ylabel and ((i % ncols) == 0),
                                             show_colorbar and (((i % ncols) == (ncols - 1)) or i == (nb_sectors - 1)),
                                             kwargs)
+            if kwargs.get('show_arrows', False):
+                Ymp, Zmp, Vy, Vz = get_arrows_coordinates(temp, **kwargs)
 
     for a in ax[-1, i % ncols + 1:]:
         a.axis('off')
@@ -932,7 +939,9 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
         valid = get_valid('None', 0, 0, description, df, N_neighbours, max_distance, kwargs)
 
         if nb_iter == 1:
-            _, _ = plot_maps(results, valid=valid, fig=fig, ax=ax[0, 0], show_colorbar=False, show_ylabel=True,
+            _, _ = plot_maps(pd.DataFrame(df['Vtan1_MP_MSP', 'Vtan2_MP_MSP', 'Vn_MP_MSP'].values,
+                                          index=df.index.values, columns=['Vtan1_MP', 'Vtan2_MP', 'Vn']),
+                             results, valid=valid, fig=fig, ax=ax[0, 0], show_colorbar=False, show_ylabel=True,
                              **kwargs)
             ax[0, 0].set_title(f'{feature_to_map} for KNN\nin neighbouring MSP\n{len(df)} points',
                                fontsize='medium')
@@ -942,7 +951,9 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
         results, _ = get_map(feature_to_map + '_MSH', df, N_neighbours, kwargs)
         vmin, vmax = update_vmin_vmax(results, feature_to_map + '_MSH', vmin, vmax, nb_iter, kwargs)
         if nb_iter == 1:
-            _, _ = plot_maps(results, valid=valid, fig=fig, ax=ax.ravel()[nb_sectors + nrows:nb_sectors + nrows + 2],
+            _, _ = plot_maps(pd.DataFrame(df['Vtan1_MP_MSH', 'Vtan2_MP_MSH', 'Vn_MP_MSH'].values,
+                                          index=df.index.values, columns=['Vtan1_MP', 'Vtan2_MP', 'Vn']),
+                             results, valid=valid, fig=fig, ax=ax.ravel()[nb_sectors + nrows:nb_sectors + nrows + 2],
                              show_ylabel=False, **kwargs)
             ax.ravel()[nb_sectors + nrows].set_title(
                 f'{feature_to_map} for KNN\nin neighbouring MSH\n{len(df)} points', fontsize='medium')
@@ -957,3 +968,63 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
     fig.suptitle(kwargs.get('chosen_description', ''))
     fig.tight_layout()
     return fig, ax
+
+
+def get_arrows_coordinates_from_maps(map_Vtan1, map_Vtan2, **kwargs):
+    Xmp, Ymp, Zmp = make_mp_grid(**kwargs)
+    _, theta, phi = cartesian_to_spherical(Xmp, Ymp, Zmp)
+
+    theta = theta.ravel()
+    phi = phi.ravel()
+    vtan1 = map_Vtan1['Vtan1_MP'].ravel()
+    vtan2 = map_Vtan2['Vtan2_MP'].ravel()
+    vn = np.zeros_like(theta)
+
+    vx, vy, vz = get_cartesian_from_tangential(theta, phi, vtan1, vtan2, vn, **kwargs)
+    vy = vy.reshape(map_Vtan1['Vtan1_MP'].shape)
+    vz = vz.reshape(map_Vtan1['Vtan1_MP'].shape)
+    v = np.sqrt(vy ** 2 + vz ** 2)
+    normalized_vy = vy / np.max(v)
+    normalized_vz = vz / np.max(v)
+
+    return Ymp, Zmp, normalized_vy, normalized_vz
+
+
+def get_cartesian_from_tangential(theta, phi, vtan1, vtan2, vn, mp='shue1998',
+                                  **kwargs):  # vx, vy, vz are the values of the vector to transform into cartesian coordinates
+    if mp == 'shue1998':
+        x_normal, y_normal, z_normal = mp_shue1998_normal(theta, phi, **kwargs)
+        [x_tan1, y_tan1, z_tan1], [x_tan2, y_tan2, z_tan2] = mp_shue1998_tangents(theta, phi, **kwargs)
+    else:
+        raise Exception(f"The MP model {mp} has not been implemented yet in get_cartesian_from_tangential.")
+
+    all_vx, all_vy, all_vz = [], [], []
+    pb = 0
+    for i in range(len(x_tan1)):
+        matrix = np.array([[x_tan1[i], y_tan1[i], z_tan1[i]], [x_tan2[i], y_tan2[i], z_tan2[i]],
+                           [x_normal[i], y_normal[i], z_normal[i]]])
+        try:
+            [vx, vy, vz] = np.dot(np.linalg.inv(matrix), np.array([vtan1[i], vtan2[i], vn[i]]))
+        except:
+            vx, vy, vz = vn[i], vtan2[i], vtan1[i]
+        all_vx.append(vx.item())
+        all_vy.append(vy.item())
+        all_vz.append(vz.item())
+    return np.array(all_vx), np.array(all_vy), np.array(all_vz)
+
+
+def get_arrows_coordinates(temp, **kwargs):
+    map_Vtan1, _ = get_map('Vtan1_MP', temp, 2000, kwargs)
+    map_Vtan2, _ = get_map('Vtan2_MP', temp, 2000, kwargs)
+
+    # Projection on Vy and Vz (this step has been checked, normalement)
+    Ymp, Zmp, Vy, Vz = get_arrows_coordinates_from_maps(map_Vtan1, map_Vtan2, **kwargs)
+
+    return Ymp, Zmp, Vy, Vz
+
+
+def plot_arrows(ax, Ymp, Zmp, Vy, Vz, step=30, **kwargs):
+    for i in range(0, len(Ymp), step):
+        for j in range(0, len(Ymp[0]), step):
+            ax.arrow(Ymp[i, j], Zmp[i, j], Vy[i, j], Vz[i, j], **kwargs)
+
