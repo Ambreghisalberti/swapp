@@ -576,7 +576,7 @@ def make_slice(df, feature, min_val, max_val):
         return df[np.logical_and(min_val < df[feature].values, df[feature].values < max_val)]
 
 
-def make_description_from_kwargs(N_neighbours, coord, **kwargs):
+def make_description_from_kwargs(N_neighbours, **kwargs):
     plot_kwargs = ['ncols','nrows','min_cla','max_cla','cmap','nb_sectors', 'sectors','min_sectors','max_sectors',
                    'sigma']
     # First order by alphabetical order, to avoid recomputing just because we gave kwargs in a different order
@@ -585,9 +585,9 @@ def make_description_from_kwargs(N_neighbours, coord, **kwargs):
     keys.sort()
     description = ''
     for k in keys:
-        if k != "N_neighbours" and k != 'coord' and k != "overwrite" and k not in plot_kwargs:
+        if k != "N_neighbours" and k != "overwrite" and k not in plot_kwargs:
             description += f'{k}={kwargs[k]}_'
-    description += f'Nneighbours={N_neighbours}_coord={coord}'
+    description += f'Nneighbours={N_neighbours}'
     return description
 
 
@@ -807,16 +807,16 @@ def get_map_from_path(path, feature_to_map, temp, N_neighbours, kwargs):
     return results
 
 
-def get_map_slice(feature_to_map, feature_to_slice, min_val, max_val, temp, N_neighbours, coord, kwargs):
-    description = make_description_from_kwargs(N_neighbours, coord, **kwargs)
+def get_map_slice(feature_to_map, feature_to_slice, min_val, max_val, temp, N_neighbours, kwargs):
+    description = make_description_from_kwargs(N_neighbours, **kwargs)
     path = (f'/home/ghisalberti/Maps/data/{feature_to_map}_{feature_to_slice}_{min_val}_{max_val}_'
             + description + '.pkl')
     results = get_map_from_path(path, feature_to_map, temp, N_neighbours, kwargs)
     return results, description
 
 
-def get_map(feature_to_map, temp, N_neighbours, coord, kwargs):
-    description = make_description_from_kwargs(N_neighbours, coord, **kwargs)
+def get_map(feature_to_map, temp, N_neighbours, kwargs):
+    description = make_description_from_kwargs(N_neighbours, **kwargs)
     path = (f'/home/ghisalberti/Maps/data/{feature_to_map}_'
             + description + '.pkl')
     results = get_map_from_path(path, feature_to_map, temp, N_neighbours, kwargs)
@@ -824,11 +824,11 @@ def get_map(feature_to_map, temp, N_neighbours, coord, kwargs):
 
 
 def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_sectors, vmin, vmax, nb_iter,
-                       N_neighbours, coord,
+                       N_neighbours,
                        max_distance, fig, ax, i, ncols, show_ylabel, show_colorbar, kwargs):
     temp = make_slice(df, feature_to_slice, min_sectors[i], max_sectors[i])
-    results, description = get_map_slice(feature_to_map, feature_to_slice, min_sectors[i], max_sectors[i], temp, N_neighbours,
-                                   coord, kwargs)
+    results, description = get_map_slice(feature_to_map, feature_to_slice, min_sectors[i], max_sectors[i], temp,
+                                         N_neighbours, kwargs)
     vmin, vmax = update_vmin_vmax(results, feature_to_map, vmin, vmax, nb_iter, kwargs)
     valid = get_valid(feature_to_slice, min_sectors[i], max_sectors[i], description, temp, N_neighbours, max_distance,
                       kwargs)
@@ -853,7 +853,6 @@ def maps_by_sectors(df, feature_to_map, feature_to_slice, **kwargs):
     max_distance = kwargs.pop('max_distance', 3)
     N_neighbours = kwargs.pop('N_neighbours', 500)
     ncols = kwargs.get('ncols', 3)
-    coord = kwargs.get('coord', 'spherical')
 
     if 'fig' in kwargs and 'ax' in kwargs:
         fig, ax = kwargs.pop('fig'), kwargs.pop('ax')
@@ -877,7 +876,7 @@ def maps_by_sectors(df, feature_to_map, feature_to_slice, **kwargs):
 
         for i in range(nb_sectors):
             vmin, vmax = compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_sectors, vmin, vmax,
-                                            nb_iter, N_neighbours, coord,
+                                            nb_iter, N_neighbours,
                                             max_distance, fig, ax, i, ncols, show_ylabel and ((i % ncols) == 0),
                                             show_colorbar and (((i % ncols) == (ncols - 1)) or i == (nb_sectors - 1)),
                                             kwargs)
@@ -898,7 +897,6 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
     max_distance = kwargs.pop('max_distance', 3)
     N_neighbours = kwargs.pop('N_neighbours', 500)
     ncols = kwargs.get('ncols', 3)
-    coord = kwargs.get('coord', 'spherical')
 
     if 'fig' in kwargs and 'ax' in kwargs:
         fig, ax = kwargs.pop('fig'), kwargs.pop('ax')
@@ -924,12 +922,12 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
 
         for i in range(nb_sectors):
             vmin, vmax = compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_sectors, vmin, vmax,
-                                            nb_iter, N_neighbours, coord,
+                                            nb_iter, N_neighbours,
                                             max_distance, fig, ax, i + 1, ncols, show_ylabel and ((i % ncols) == 0),
                                             show_colorbar and ((((i + 1) % ncols) == (ncols - 1)) or i == nb_sectors),
                                             kwargs)
 
-        results, description = get_map(feature_to_map + '_MSP', df, N_neighbours, coord, kwargs)
+        results, description = get_map(feature_to_map + '_MSP', df, N_neighbours, kwargs)
         vmin, vmax = update_vmin_vmax(results, feature_to_map + '_MSP', vmin, vmax, nb_iter, kwargs)
         valid = get_valid('None', 0, 0, description, df, N_neighbours, max_distance, kwargs)
 
@@ -941,7 +939,7 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
             plot_CLA_sector(12, 14, 2.5, kwargs.get('min_cla',0), kwargs.get('max_cla',0), ax[0, 0])
 
         # MSH
-        results, _ = get_map(feature_to_map + '_MSH', df, N_neighbours, coord, kwargs)
+        results, _ = get_map(feature_to_map + '_MSH', df, N_neighbours, kwargs)
         vmin, vmax = update_vmin_vmax(results, feature_to_map + '_MSH', vmin, vmax, nb_iter, kwargs)
         if nb_iter == 1:
             _, _ = plot_maps(results, valid=valid, fig=fig, ax=ax.ravel()[nb_sectors + nrows:nb_sectors + nrows + 2],
