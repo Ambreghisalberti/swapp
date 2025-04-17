@@ -583,7 +583,8 @@ def make_slice(df, feature, min_val, max_val):
 def make_description_from_kwargs(N_neighbours, **kwargs):
     plot_kwargs = ['ncols', 'nrows', 'min_cla', 'max_cla', 'cmap', 'nb_sectors', 'sectors', 'min_sectors',
                    'max_sectors', 'sigma', 'fig', 'ax', 'valid', 'show_ylabel', 'show_colorbar', 'plot_arrows',
-                   'vmax', 'vmin', 'step', 'head_width', 'factor', 'slice']
+                   'vmax', 'vmin', 'step', 'head_width', 'factor', 'slice', 'arrows_coordinates', 'x_lim',
+                   'y_lim', 'z_lim']
     # First order by alphabetical order, to avoid recomputing just because we gave kwargs in a different order
     # Second, don't use plot kwargs because they have no effect on data to plot
     keys = list(kwargs.keys())
@@ -877,9 +878,13 @@ def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_se
         a = ax[i // ncols, i % ncols]
         _, _ = plot_maps(temp, results, fig=fig, ax=ax[i // ncols, i % ncols:i % ncols + 2], valid=valid,
                          show_ylabel=show_ylabel, show_colorbar=show_colorbar, **kwargs)
-        a.set_title(
-            f'{feature_to_map}\nfor {round(min_sectors[i], 2)} < {feature_to_slice} < {round(max_sectors[i], 2)}\n'
-            f'{len(temp)} points', fontsize='medium')  # , fontsize=7)
+        if feature_to_slice in ['omni_CLA','omni_COA','CLA','COA', 'tilt']:
+            title = (f'{feature_to_map}\nfor {round(min_sectors[i]*180/np.pi, 2)}° < {feature_to_slice} < '
+                     f'{round(max_sectors[i]*180/np.pi, 2)}°\n{len(temp)} points')
+        else:
+            title = (f'{feature_to_map}\nfor {round(min_sectors[i], 2)} < {feature_to_slice} < '
+                     f'{round(max_sectors[i], 2)}\n{len(temp)} points')
+        a.set_title(title, fontsize='medium')  # , fontsize=7)
         if feature_to_slice == 'omni_CLA':
             plot_CLA_sector(12, 14, 2.5, min_sectors[i], max_sectors[i], a)
     return vmin, vmax
