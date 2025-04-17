@@ -1021,8 +1021,8 @@ def get_arrows_coordinates(temp, **kwargs):
     return Ymp, Zmp, Vy, Vz
 
 
-def plot_arrows(ax, Ymp, Zmp, Vy, Vz, step=30, **kwargs):
+def plot_arrows(ax, Ymp, Zmp, Vy, Vz, step=30, factor=1):
     for i in range(0, len(Ymp), step):
         for j in range(0, len(Ymp[0]), step):
-            ax.arrow(Ymp[i, j], Zmp[i, j], Vy[i, j], Vz[i, j], **kwargs)
+            ax.arrow(Ymp[i, j], Zmp[i, j], Vy[i, j]*factor, Vz[i, j]*factor, head_width=0.2)
 
