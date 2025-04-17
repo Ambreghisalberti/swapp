@@ -580,7 +580,7 @@ def make_slice(df, feature, min_val, max_val):
 def make_description_from_kwargs(N_neighbours, **kwargs):
     plot_kwargs = ['ncols', 'nrows', 'min_cla', 'max_cla', 'cmap', 'nb_sectors', 'sectors', 'min_sectors',
                    'max_sectors', 'sigma', 'fig', 'ax', 'valid', 'show_ylabel', 'show_colorbar', 'plot_arrows',
-                   'vmax', 'vmin', 'step', 'head_width', 'factor']
+                   'vmax', 'vmin', 'step', 'head_width', 'factor', 'slice']
     # First order by alphabetical order, to avoid recomputing just because we gave kwargs in a different order
     # Second, don't use plot kwargs because they have no effect on data to plot
     keys = list(kwargs.keys())
@@ -816,39 +816,58 @@ def get_map_from_path(path, feature_to_map, temp, N_neighbours, kwargs):
     return results
 
 
-def get_map_slice(feature_to_map, feature_to_slice, min_val, max_val, temp, N_neighbours, kwargs):
+def get_path_slice(feature_to_map, feature_to_slice, min_val, max_val, N_neighbours, kwargs):
     description = make_description_from_kwargs(N_neighbours, **kwargs)
     path = (f'/home/ghisalberti/Maps/data/{feature_to_map}_{feature_to_slice}_{min_val}_{max_val}_'
             + description + '.pkl')
+    return path
+
+
+def get_path(feature_to_map, N_neighbours, kwargs):
+    description = make_description_from_kwargs(N_neighbours, **kwargs)
+    path = (f'/home/ghisalberti/Maps/data/{feature_to_map}_'+ description + '.pkl')
+    return path
+
+
+def get_map_slice(feature_to_map, feature_to_slice, min_val, max_val, temp, N_neighbours, kwargs):
+    description = make_description_from_kwargs(N_neighbours, **kwargs)
+    path = get_path_slice(feature_to_map, feature_to_slice, min_val, max_val, N_neighbours, kwargs)
     results = get_map_from_path(path, feature_to_map, temp, N_neighbours, kwargs)
-    arrows = {}
-    if kwargs.get('arrows', True):
-        Ymp, Zmp, arrowy, arrowz = get_arrows_coordinates(temp, **kwargs)
-        arrows = {'Y': Ymp, 'Z': Zmp, 'arrowy': arrowy, 'arrowz': arrowz}
-    return results, description, arrows
+
+    return results, description
 
 
-def get_map(feature_to_map, temp, N_neighbours, kwargs):
+def get_map_whole_dataset(feature_to_map, temp, N_neighbours, kwargs):
     description = make_description_from_kwargs(N_neighbours, **kwargs)
     path = (f'/home/ghisalberti/Maps/data/{feature_to_map}_'
             + description + '.pkl')
     results = get_map_from_path(path, feature_to_map, temp, N_neighbours, kwargs)
-    arrows = {}
-    if kwargs.get('arrows', True):
-        Ymp, Zmp, arrowy, arrowz = get_arrows_coordinates(temp, **kwargs)
-        arrows = {'Y': Ymp, 'Z': Zmp, 'arrowy': arrowy, 'arrowz': arrowz}
-    return results, description, arrows
+    return results, description
+
+
+def get_map(*inputs, **kwargs):
+    if kwargs.get('slice', False):
+        results, description = get_map_slice(*inputs, kwargs)
+    else:
+        results, description = get_map_whole_dataset(*inputs, kwargs)
+    return results, description
 
 
 def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_sectors, vmin, vmax, nb_iter,
                        N_neighbours,
                        max_distance, fig, ax, i, ncols, show_ylabel, show_colorbar, kwargs):
     temp = make_slice(df, feature_to_slice, min_sectors[i], max_sectors[i])
-    results, description, arrows = get_map_slice(feature_to_map, feature_to_slice, min_sectors[i], max_sectors[i], temp,
+    results, description = get_map_slice(feature_to_map, feature_to_slice, min_sectors[i], max_sectors[i], temp,
                                          N_neighbours, kwargs)
     vmin, vmax = update_vmin_vmax(results, feature_to_map, vmin, vmax, nb_iter, kwargs)
     valid = get_valid(feature_to_slice, min_sectors[i], max_sectors[i], description, temp, N_neighbours, max_distance,
                       kwargs)
+    if kwargs.get('plot_arrows', False):
+        path_Vtan1 = get_path_slice('Vtan1_MP', feature_to_slice, min_sectors[i], max_sectors[i], N_neighbours, kwargs)
+        path_Vtan2 = get_path_slice('Vtan2_MP', feature_to_slice, min_sectors[i], max_sectors[i], N_neighbours, kwargs)
+        kwargs['path_Vtan1'] = path_Vtan1
+        kwargs['path_Vtan2'] = path_Vtan2
+        Y, Z, valy, valz = get_arrows_coordinates(temp, **kwargs)
 
     if nb_iter == 1:
         a = ax[i // ncols, i % ncols]
@@ -944,7 +963,7 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
                                             show_colorbar and ((((i + 1) % ncols) == (ncols - 1)) or i == nb_sectors),
                                             kwargs)
 
-        results, description, arrows = get_map(feature_to_map + '_MSP', df, N_neighbours, kwargs)
+        results, description = get_map(feature_to_map + '_MSP', df, N_neighbours, kwargs)
         vmin, vmax = update_vmin_vmax(results, feature_to_map + '_MSP', vmin, vmax, nb_iter, kwargs)
         valid = get_valid('None', 0, 0, description, df, N_neighbours, max_distance, kwargs)
 
@@ -958,7 +977,7 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
             plot_CLA_sector(12, 14, 2.5, kwargs.get('min_cla',0), kwargs.get('max_cla',0), ax[0, 0])
 
         # MSH
-        results, _, arrows = get_map(feature_to_map + '_MSH', df, N_neighbours, kwargs)
+        results, _ = get_map(feature_to_map + '_MSH', df, N_neighbours, kwargs)
         vmin, vmax = update_vmin_vmax(results, feature_to_map + '_MSH', vmin, vmax, nb_iter, kwargs)
         if nb_iter == 1:
             _, _ = plot_maps(pd.DataFrame(df['Vtan1_MP_MSH', 'Vtan2_MP_MSH', 'Vn_MP_MSH'].values,
@@ -1024,8 +1043,8 @@ def get_cartesian_from_tangential(theta, phi, vtan1, vtan2, vn, mp='shue1998',
 
 
 def get_arrows_coordinates(temp, **kwargs):
-    map_Vtan1, _, arrows = get_map('Vtan1_MP', temp, 2000, kwargs)
-    map_Vtan2, _, arrows = get_map('Vtan2_MP', temp, 2000, kwargs)
+    map_Vtan1, _ = get_map('Vtan1_MP', temp, 2000, kwargs)
+    map_Vtan2, _ = get_map('Vtan2_MP', temp, 2000, kwargs)
 
     # Projection on Vy and Vz (this step has been checked, normalement)
     Ymp, Zmp, Vy, Vz = get_arrows_coordinates_from_maps(map_Vtan1, map_Vtan2, **kwargs)
