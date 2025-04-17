@@ -760,7 +760,7 @@ def plot_maps(df, interpolated_features, **kwargs):
 
     if kwargs.get('plot_arrows', False):
         Ymp, Zmp, Vy, Vz = get_arrows_coordinates(df, **kwargs)
-        _ = kwargs.pop('ax')
+        _,_ = kwargs.pop('ax'), kwargs.pop('fig')
         plot_arrows(a, Ymp, Zmp, Vy, Vz, **kwargs)
 
     fig.tight_layout()
