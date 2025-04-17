@@ -19,6 +19,8 @@ import os
 from datetime import timedelta
 from spok.models.planetary import mp_shue1998_normal, mp_shue1998_tangents
 
+diverging_cmaps = ['PiYG', 'seismic', 'coolwarm']
+
 
 def add_spherical_coordinates(df):
     R, theta, phi = cartesian_to_spherical(df.X.values, df.Y.values, df.Z.values)
@@ -92,7 +94,7 @@ def plot_relative_diff_pannel(df, all_pos, featurex, featurey, fig, bins, sigma,
     relative_diff[relative_diff == np.float64('inf')] = np.nan
     relative_diff[relative_diff == -np.float64('inf')] = np.nan
     relative_diff = gaussian_filter_nan_datas(relative_diff, sigma)
-    if cmap == 'seismic':
+    if cmap in diverging_cmaps:
         vmin = -np.nanmax(abs(relative_diff))
         vmax = np.nanmax(abs(relative_diff))
     else:
@@ -311,7 +313,7 @@ def plot_repositionned_pannel(temp, featurex, featurey, f, fig, ax, cmap, bins, 
     stat, xbins, ybins, _ = binned_statistic_2d(temp[featurex].values, temp[featurey].values,
                                                 f(temp), statistic='median', bins=bins)
     stat = gaussian_filter_nan_datas(stat, sigma)
-    if cmap == 'seismic':
+    if cmap in diverging_cmaps:
         vmax = np.nanmax(abs(stat))
         vmin = -vmax
     else:
@@ -328,9 +330,9 @@ def plot_repositionned_stat_binned(df, feature, **kwargs):
     sigma = kwargs.get('sigma', 0)
     bins = kwargs.get('bins', 100)
 
-    if kwargs.get('cmap') == 'seismic' and kwargs.get('zscale') == 'log':
+    if kwargs.get('cmap') in diverging_cmaps and kwargs.get('zscale') == 'log':
         raise Exception(
-            'The seismic cmap was designed in this function to be centered around 0, '
+            f'The {kwargs.get("cmap")} cmap was designed in this function to be centered around 0, '
             'so it will not work for a log scale.')
 
     if 'r_MP_Shue' not in df.columns:
@@ -536,7 +538,7 @@ def hist_by_CLA(BL, feature, **kwargs):
                                                      statistic='mean', bins=kwargs.get('bins', 50))
         stat = gaussian_filter_nan_datas(stat, 1)
 
-        if cmap == 'seismic':
+        if cmap in diverging_cmaps:
             vmin, vmax = -np.nanmax(abs(stat)), np.nanmax(abs(stat))
         else:
             vmin, vmax = np.nanmin(stat), np.nanmax(stat)
@@ -546,7 +548,8 @@ def hist_by_CLA(BL, feature, **kwargs):
         im = ax[i // ncols, i % ncols].pcolormesh(xbins, ybins, stat.T, cmap=cmap, vmin=vmin, vmax=vmax)
         plt.colorbar(im, ax=ax[i // ncols, i % ncols])
         ax[i // ncols, i % ncols].set_title(
-            f'{feature}\nfor {round(sectors_CLA[i], 2)} < CLA < {round(sectors_CLA[i + 1], 2)}\n{len(temp)} points')
+            f'{feature}\nfor {round(sectors_CLA[i]*180/np.pi, 2)}° < CLA < '
+            f'{round(sectors_CLA[i + 1]*180/np.pi, 2)}°\n{len(temp)} points')
         plot_CLA_sector(14, 12, 2.5, sectors_CLA[i], sectors_CLA[i + 1], ax[i // ncols, i % ncols])
         _, _ = planet_env.layout_earth_env(msh, figure=fig, axes=np.array([ax[i // ncols, i % ncols]]), y_lim=(-17, 17),
                                            z_lim=(-17, 17), x_slice=0)
@@ -670,7 +673,7 @@ def associate_SW_Safrankova(X_sat, omni, BS_standoff, dtm=0, sampling_time='5S',
 
 def get_kwargsplot(to_plot, **kwargs):
     kwargsplot = {'cmap': kwargs.get('cmap')}
-    if kwargs.get('cmap') == 'seismic' or kwargs.get('cmap') == 'coolwarm':
+    if kwargs.get('cmap') in diverging_cmaps:
         kwargsplot['vmax'] = kwargs.get('vmax', abs(np.nanmax(to_plot)))
         kwargsplot['vmin'] = kwargs.get('vmin', -abs(np.nanmax(to_plot)))
     else:
@@ -868,6 +871,7 @@ def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_se
         else:
             inputs = (temp, N_neighbours)
         Y, Z, valy, valz = get_arrows_coordinates(*inputs, **kwargs)
+        kwargs['arrows_coordinates'] = {'Y':Y, 'Z':Z, 'valy':valy, 'valz':valz}
 
     if nb_iter == 1:
         a = ax[i // ncols, i % ncols]
