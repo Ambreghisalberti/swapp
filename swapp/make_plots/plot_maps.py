@@ -863,11 +863,11 @@ def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_se
     valid = get_valid(feature_to_slice, min_sectors[i], max_sectors[i], description, temp, N_neighbours, max_distance,
                       kwargs)
     if kwargs.get('plot_arrows', False):
-        path_Vtan1 = get_path_slice('Vtan1_MP', feature_to_slice, min_sectors[i], max_sectors[i], N_neighbours, kwargs)
-        path_Vtan2 = get_path_slice('Vtan2_MP', feature_to_slice, min_sectors[i], max_sectors[i], N_neighbours, kwargs)
-        kwargs['path_Vtan1'] = path_Vtan1
-        kwargs['path_Vtan2'] = path_Vtan2
-        Y, Z, valy, valz = get_arrows_coordinates(temp, **kwargs)
+        if kwargs.get('slice', False):
+            inputs = (feature_to_slice, min_sectors[i], max_sectors[i], temp, N_neighbours)
+        else:
+            inputs = (temp, N_neighbours)
+        Y, Z, valy, valz = get_arrows_coordinates(*inputs, kwargs)
 
     if nb_iter == 1:
         a = ax[i // ncols, i % ncols]
@@ -1042,9 +1042,9 @@ def get_cartesian_from_tangential(theta, phi, vtan1, vtan2, vn, mp='shue1998',
     return np.array(all_vx), np.array(all_vy), np.array(all_vz)
 
 
-def get_arrows_coordinates(temp, **kwargs):
-    map_Vtan1, _ = get_map('Vtan1_MP', temp, 2000, kwargs)
-    map_Vtan2, _ = get_map('Vtan2_MP', temp, 2000, kwargs)
+def get_arrows_coordinates(*inputs, kwargs):
+    map_Vtan1, _ = get_map('Vtan1_MP', *inputs, kwargs)
+    map_Vtan2, _ = get_map('Vtan2_MP', *inputs, kwargs)
 
     # Projection on Vy and Vz (this step has been checked, normalement)
     Ymp, Zmp, Vy, Vz = get_arrows_coordinates_from_maps(map_Vtan1, map_Vtan2, **kwargs)
