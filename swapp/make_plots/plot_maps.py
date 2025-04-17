@@ -578,18 +578,21 @@ def make_slice(df, feature, min_val, max_val):
 
 
 def make_description_from_kwargs(N_neighbours, **kwargs):
-    plot_kwargs = ['ncols','nrows','min_cla','max_cla','cmap','nb_sectors', 'sectors','min_sectors','max_sectors',
-                   'sigma','fig','ax','valid','show_ylabel','show_colorbar','plot_arrows','vmax','vmin',
-                   'step','head_width','factor']
+    plot_kwargs = ['ncols', 'nrows', 'min_cla', 'max_cla', 'cmap', 'nb_sectors', 'sectors', 'min_sectors',
+                   'max_sectors', 'sigma', 'fig', 'ax', 'valid', 'show_ylabel', 'show_colorbar', 'plot_arrows',
+                   'vmax', 'vmin', 'step', 'head_width', 'factor']
     # First order by alphabetical order, to avoid recomputing just because we gave kwargs in a different order
     # Second, don't use plot kwargs because they have no effect on data to plot
     keys = list(kwargs.keys())
     keys.sort()
     description = ''
+    chosen_description = ''
     for k in keys:
-        if k != "N_neighbours" and k != "overwrite" and k not in plot_kwargs:
+        if k != "N_neighbours" and k != "overwrite" and k != 'chosen_description' and k not in plot_kwargs:
             description += f'{k}={kwargs[k]}_'
-    description += f'Nneighbours={N_neighbours}'
+        if k == 'chosen_description':
+            chosen_description = '_'+kwargs[k]
+    description += f'Nneighbours={N_neighbours}{chosen_description}'
     return description
 
 
@@ -759,8 +762,8 @@ def plot_maps(df, interpolated_features, **kwargs):
             a.set_ylabel('')
         a.axis('equal')
 
-    if kwargs.get('plot_arrows', False):
-        Ymp, Zmp, Vy, Vz = get_arrows_coordinates(df, **kwargs)
+    if 'arrows_coordinates' in kwargs:
+        Ymp, Zmp, Vy, Vz = kwargs['arrows_coordinates'].values()
         plot_arrows(a, Ymp, Zmp, Vy, Vz)
 
     fig.tight_layout()
@@ -818,7 +821,11 @@ def get_map_slice(feature_to_map, feature_to_slice, min_val, max_val, temp, N_ne
     path = (f'/home/ghisalberti/Maps/data/{feature_to_map}_{feature_to_slice}_{min_val}_{max_val}_'
             + description + '.pkl')
     results = get_map_from_path(path, feature_to_map, temp, N_neighbours, kwargs)
-    return results, description
+    arrows = {}
+    if kwargs.get('arrows', True):
+        Ymp, Zmp, arrowy, arrowz = get_arrows_coordinates(temp, **kwargs)
+        arrows = {'Y': Ymp, 'Z': Zmp, 'arrowy': arrowy, 'arrowz': arrowz}
+    return results, description, arrows
 
 
 def get_map(feature_to_map, temp, N_neighbours, kwargs):
@@ -826,14 +833,18 @@ def get_map(feature_to_map, temp, N_neighbours, kwargs):
     path = (f'/home/ghisalberti/Maps/data/{feature_to_map}_'
             + description + '.pkl')
     results = get_map_from_path(path, feature_to_map, temp, N_neighbours, kwargs)
-    return results, description
+    arrows = {}
+    if kwargs.get('arrows', True):
+        Ymp, Zmp, arrowy, arrowz = get_arrows_coordinates(temp, **kwargs)
+        arrows = {'Y': Ymp, 'Z': Zmp, 'arrowy': arrowy, 'arrowz': arrowz}
+    return results, description, arrows
 
 
 def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_sectors, vmin, vmax, nb_iter,
                        N_neighbours,
                        max_distance, fig, ax, i, ncols, show_ylabel, show_colorbar, kwargs):
     temp = make_slice(df, feature_to_slice, min_sectors[i], max_sectors[i])
-    results, description = get_map_slice(feature_to_map, feature_to_slice, min_sectors[i], max_sectors[i], temp,
+    results, description, arrows = get_map_slice(feature_to_map, feature_to_slice, min_sectors[i], max_sectors[i], temp,
                                          N_neighbours, kwargs)
     vmin, vmax = update_vmin_vmax(results, feature_to_map, vmin, vmax, nb_iter, kwargs)
     valid = get_valid(feature_to_slice, min_sectors[i], max_sectors[i], description, temp, N_neighbours, max_distance,
@@ -933,7 +944,7 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
                                             show_colorbar and ((((i + 1) % ncols) == (ncols - 1)) or i == nb_sectors),
                                             kwargs)
 
-        results, description = get_map(feature_to_map + '_MSP', df, N_neighbours, kwargs)
+        results, description, arrows = get_map(feature_to_map + '_MSP', df, N_neighbours, kwargs)
         vmin, vmax = update_vmin_vmax(results, feature_to_map + '_MSP', vmin, vmax, nb_iter, kwargs)
         valid = get_valid('None', 0, 0, description, df, N_neighbours, max_distance, kwargs)
 
@@ -947,7 +958,7 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
             plot_CLA_sector(12, 14, 2.5, kwargs.get('min_cla',0), kwargs.get('max_cla',0), ax[0, 0])
 
         # MSH
-        results, _ = get_map(feature_to_map + '_MSH', df, N_neighbours, kwargs)
+        results, _, arrows = get_map(feature_to_map + '_MSH', df, N_neighbours, kwargs)
         vmin, vmax = update_vmin_vmax(results, feature_to_map + '_MSH', vmin, vmax, nb_iter, kwargs)
         if nb_iter == 1:
             _, _ = plot_maps(pd.DataFrame(df['Vtan1_MP_MSH', 'Vtan2_MP_MSH', 'Vn_MP_MSH'].values,
@@ -1013,8 +1024,8 @@ def get_cartesian_from_tangential(theta, phi, vtan1, vtan2, vn, mp='shue1998',
 
 
 def get_arrows_coordinates(temp, **kwargs):
-    map_Vtan1, _ = get_map('Vtan1_MP', temp, 2000, kwargs)
-    map_Vtan2, _ = get_map('Vtan2_MP', temp, 2000, kwargs)
+    map_Vtan1, _, arrows = get_map('Vtan1_MP', temp, 2000, kwargs)
+    map_Vtan2, _, arrows = get_map('Vtan2_MP', temp, 2000, kwargs)
 
     # Projection on Vy and Vz (this step has been checked, normalement)
     Ymp, Zmp, Vy, Vz = get_arrows_coordinates_from_maps(map_Vtan1, map_Vtan2, **kwargs)
