@@ -845,7 +845,7 @@ def get_map_whole_dataset(feature_to_map, temp, N_neighbours, kwargs):
     return results, description
 
 
-def get_map(*inputs, **kwargs):
+def get_map(*inputs, kwargs):
     if kwargs.get('slice', False):
         results, description = get_map_slice(*inputs, kwargs)
     else:
