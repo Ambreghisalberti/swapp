@@ -579,7 +579,7 @@ def make_slice(df, feature, min_val, max_val):
 
 def make_description_from_kwargs(N_neighbours, **kwargs):
     plot_kwargs = ['ncols','nrows','min_cla','max_cla','cmap','nb_sectors', 'sectors','min_sectors','max_sectors',
-                   'sigma']
+                   'sigma','fig','ax','valid','show_ylabel','show_colorbar','plot_arrows','vmax','vmin']
     # First order by alphabetical order, to avoid recomputing just because we gave kwargs in a different order
     # Second, don't use plot kwargs because they have no effect on data to plot
     keys = list(kwargs.keys())
@@ -725,7 +725,7 @@ def get_fig_ax(features, **kwargs):
         fig, ax = kwargs['fig'], kwargs['ax']
     ax = make_ax_2D(ax)
     nrows, ncols = ax.shape
-    return fig, ax, nrows, ncols, kwargs
+    return fig, ax, nrows, ncols
 
 
 def plot_maps(df, interpolated_features, **kwargs):
@@ -733,7 +733,7 @@ def plot_maps(df, interpolated_features, **kwargs):
     Xmp, Ymp, Zmp = make_mp_grid(**kwargs)
     valid = kwargs.get('valid', np.ones(Xmp.shape))
 
-    fig, ax, nrows, ncols, kwargs = get_fig_ax(features, **kwargs)
+    fig, ax, nrows, ncols = get_fig_ax(features, **kwargs)
 
     msh = Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
     for i, feature in enumerate(features):
