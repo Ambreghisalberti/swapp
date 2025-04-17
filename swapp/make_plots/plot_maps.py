@@ -871,7 +871,7 @@ def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_se
         else:
             inputs = (temp, N_neighbours)
         Y, Z, valy, valz = get_arrows_coordinates(*inputs, **kwargs)
-        kwargs['arrows_coordinates'] = {'Y':Y, 'Z':Z, 'valy':valy, 'valz':valz}
+        kwargs['arrows_coordinates'] = {'Y': Y, 'Z': Z, 'valy': valy, 'valz': valz}
 
     if nb_iter == 1:
         a = ax[i // ncols, i % ncols]
