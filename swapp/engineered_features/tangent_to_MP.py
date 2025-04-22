@@ -1,4 +1,5 @@
 import numpy as np
+from spok.models.planetary import mp_shue1998_tangents, mp_shue1998_normal
 
 
 def get_shue_params(**kwargs):
@@ -39,7 +40,7 @@ def V_tan2_to_Shue(theta, phi, vx, vy, vz, **kwargs):
     return vy * np.cos(phi) - vz * np.sin(phi)
 
 
-def cartesian_to_tangential(theta, phi, vx, vy, vz):
+def cartesian_to_tangential0(theta, phi, vx, vy, vz):
     vtan1 = V_tan1_to_Shue(theta, phi, vx, vy, vz)
     vtan2 = V_tan2_to_Shue(theta, phi, vx, vy, vz)
     vn = V_normal_to_Shue(theta, phi, vx, vy, vz)
@@ -155,3 +156,16 @@ def check_transformations(vx, vy, vz, theta, phi):
 
     return abs(np.sqrt(vx_bis ** 2 + vy_bis ** 2 + vz_bis ** 2) - np.sqrt(vx ** 2 + vy ** 2 + vz ** 2)) / np.sqrt(
         vx_bis ** 2 + vy_bis ** 2 + vz_bis ** 2)
+
+
+# This is from Bayane's work, and it gives results that are almost linearly linked to mine, but that are different,
+# so I take hers because her calculations are simpler, she's more likely to be right
+def cartesian_to_tangential0(theta, phi, valx, valy, valz):
+    x_normal, y_normal, z_normal = mp_shue1998_normal(theta, phi)
+    [x_tan1, y_tan1, z_tan1], [x_tan2, y_tan2, z_tan2] = mp_shue1998_tangents(theta, phi)
+
+    valn = x_normal * valx + y_normal * valy + z_normal * valz
+    valtan1 = x_tan1 * valx + y_tan1 * valy + z_tan1 * valz
+    valtan2 = x_tan2 * valx + y_tan2 * valy + z_tan2 * valz
+
+    return valtan1, valtan2, valn

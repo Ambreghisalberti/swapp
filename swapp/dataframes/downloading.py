@@ -11,7 +11,7 @@ def download_product_interval(path, start, stop, **kwargs):
         product = spz.get_data(path, start, stop)
     except:
         product = None
-        
+
     if product is not None:
         product = pd.DataFrame(data=product.values, index=product.time)
         resolution = kwargs.get('resolution', time_resolution(product))
