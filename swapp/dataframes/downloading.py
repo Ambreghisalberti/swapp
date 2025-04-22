@@ -80,7 +80,7 @@ def check_monotony(df):
 
 
 def check_duplicates(df):
-    assert df.index.duplicated.sum() == 0, "The merged product has duplicate dates."
+    assert df.index.duplicated().sum() == 0, "The merged product has duplicate dates."
 
 
 def check_name_unicity(starts, stops):
