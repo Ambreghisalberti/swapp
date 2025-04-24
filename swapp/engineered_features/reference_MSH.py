@@ -169,16 +169,19 @@ def get_ref_MSH_feature_over_time(apogee_times, perigee_times, df, feature, **kw
         df.loc[df[apogee: perigee_times[i + 1]].index.values, 'ref_MSH_' + feature] = median
 
 
-def compute_apogees_perigees(df, sat):
+def compute_apogees_perigees(df, sat, description=''):
+    if description != '':
+        description = '_'+description
+
     """ This dataframe must contain X, Y, Z the coordinates of the satellite relative to the Earth."""
     apogee_times = find_apogee_times(df)
     print(f'{len(apogee_times)} apogees have been found.')
     pd.to_pickle(apogee_times, f'/home/ghisalberti/make_datasets/MSH_reference/'
-                               f'{sat}_all_apogee_times.pkl')
+                               f'{sat}_all_apogee_times{description}.pkl')
     perigee_times = find_perigee_times(df)
     print(f'{len(perigee_times)} perigees have been found.')
     pd.to_pickle(perigee_times, f'/home/ghisalberti/make_datasets/MSH_reference/'
-                                f'{sat}_all_perigee_times.pkl')
+                                f'{sat}_all_perigee_times{description}.pkl')
 
     find_closest_apogees_perigees(apogee_times, perigee_times, df)
     return apogee_times, perigee_times

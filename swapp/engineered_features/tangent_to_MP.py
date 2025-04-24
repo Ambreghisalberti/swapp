@@ -160,7 +160,7 @@ def check_transformations(vx, vy, vz, theta, phi):
 
 # This is from Bayane's work, and it gives results that are almost linearly linked to mine, but that are different,
 # so I take hers because her calculations are simpler, she's more likely to be right
-def cartesian_to_tangential0(theta, phi, valx, valy, valz):
+def cartesian_to_tangential(theta, phi, valx, valy, valz):
     x_normal, y_normal, z_normal = mp_shue1998_normal(theta, phi)
     [x_tan1, y_tan1, z_tan1], [x_tan2, y_tan2, z_tan2] = mp_shue1998_tangents(theta, phi)
 
