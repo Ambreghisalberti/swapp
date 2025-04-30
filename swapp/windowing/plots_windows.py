@@ -297,5 +297,4 @@ def plot_pos(pos, **kwargs):
     msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
     if not isinstance(ax, np.ndarray):
         ax = np.array([ax])
-    _, _ = planet_env.layout_earth_env(msh, figure=fig, axes=ax, x_lim=(-2, 25),
-                                       **kwargs)
+    _, _ = planet_env.layout_earth_env(msh, figure=fig, axes=ax, x_lim=kwargs.pop('x_lim',(-2, 25)), **kwargs)
