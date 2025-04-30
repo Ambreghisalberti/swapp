@@ -162,7 +162,8 @@ def plot_pos(df, **kwargs):
         i += 1
 
     msh = planetary.Magnetosheath(magnetopause='mp_shue1998', bow_shock='bs_jelinek2012')
-    fig, ax = planet_env.layout_earth_env(msh, figure=fig, axes=np.array([ax]), x_lim=(-2, 25), **kwargs)
+    x_lim = kwargs.pop('x_lim', (-2, 25))
+    fig, ax = planet_env.layout_earth_env(msh, figure=fig, axes=np.array([ax]), x_lim=x_lim, **kwargs)
     if 'title' in kwargs:
         fig.suptitle(kwargs['title'])
 
