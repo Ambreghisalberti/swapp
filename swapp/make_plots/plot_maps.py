@@ -166,6 +166,8 @@ def plot_pos(df, **kwargs):
     fig, ax = planet_env.layout_earth_env(msh, figure=fig, axes=np.array([ax]), x_lim=x_lim, **kwargs)
     if 'title' in kwargs:
         fig.suptitle(kwargs['title'])
+    for a in ax:
+        a.set_aspect('equal')
 
 
 def plot_panel(to_plot, featurex, featurey, fig, bins, sigma, cmap, ax, **kwargs):
