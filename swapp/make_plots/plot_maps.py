@@ -896,7 +896,7 @@ def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_se
             _, _ = plot_maps(temp, results, fig=fig, ax=ax[i // ncols, i % ncols:i % ncols + 2], valid=valid,
                          show_ylabel=show_ylabel, show_colorbar=show_colorbar, **kwargs)
         elif kwargs.get('method_map', 'KNN') == 'binned_stat':
-            _, _ = plot_maps(temp, {feature_to_map:results}, Ymp=xbins, Zmp=ybins, fig=fig, ax=ax[i // ncols, i % ncols:i % ncols + 2],
+            _, _ = plot_maps(temp, {feature_to_map:results.T}, Ymp=xbins, Zmp=ybins, fig=fig, ax=ax[i // ncols, i % ncols:i % ncols + 2],
                              show_ylabel=show_ylabel, show_colorbar=show_colorbar, **kwargs)
 
         if feature_to_slice in ['omni_CLA','omni_COA','CLA','COA', 'tilt']:
