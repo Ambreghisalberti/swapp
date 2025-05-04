@@ -739,8 +739,8 @@ def get_fig_ax(features, **kwargs):
     return fig, ax, nrows, ncols
 
 
-def plot_maps(df, interpolated_features, **kwargs):
-    features = kwargs.get('features', list(interpolated_features.keys()))
+def plot_maps(df, results, **kwargs):
+    features = kwargs.get('features', list(results.keys()))
     Xmp, Ymp, Zmp = make_mp_grid(**kwargs)
     valid = kwargs.get('valid', np.ones(Xmp.shape))
 
@@ -750,8 +750,11 @@ def plot_maps(df, interpolated_features, **kwargs):
     for i, feature in enumerate(features):
         a = ax[i // ncols, i % ncols]
 
-        to_plot = interpolated_features[feature].copy()
-        to_plot[valid == 0] = np.nan
+        if kwargs.get('method_map','KNN')=='KNN':
+            to_plot = results[feature].copy()
+            to_plot[valid == 0] = np.nan
+        elif kwargs.get('method_map','KNN')=='binned_stat':
+            to_plot = results[feature].copy()
         to_plot = gaussian_filter_nan_datas(to_plot, kwargs.get('sigma', 0))
         kwargsplot = get_kwargsplot(to_plot, **kwargs)
         im = a.pcolormesh(Ymp, Zmp, to_plot, **kwargsplot)
@@ -890,7 +893,8 @@ def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_se
             _, _ = plot_maps(temp, results, fig=fig, ax=ax[i // ncols, i % ncols:i % ncols + 2], valid=valid,
                          show_ylabel=show_ylabel, show_colorbar=show_colorbar, **kwargs)
         elif kwargs.get('method_map', 'KNN') == 'binned_stat':
-            _ = a.pcolormesh(xbins, ybins, stat.T, cmap=kwargs.get('cmap', 'jet'), vmin=vmin, vmax=vmax)
+            _, _ = plot_maps(temp, {feature_to_map:results}, fig=fig, ax=ax[i // ncols, i % ncols:i % ncols + 2], valid=valid,
+                             show_ylabel=show_ylabel, show_colorbar=show_colorbar, **kwargs)
 
         if feature_to_slice in ['omni_CLA','omni_COA','CLA','COA', 'tilt']:
             title = (f'{feature_to_map}\nfor {round(min_sectors[i]*180/np.pi, 2)}° < {feature_to_slice} < '
