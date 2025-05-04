@@ -741,8 +741,11 @@ def get_fig_ax(features, **kwargs):
 
 def plot_maps(df, results, **kwargs):
     features = kwargs.get('features', list(results.keys()))
-    Xmp, Ymp, Zmp = make_mp_grid(**kwargs)
-    valid = kwargs.get('valid', np.ones(Xmp.shape))
+    if 'Ymp' not in kwargs or 'Zmp' not in kwargs:
+        _, Ymp, Zmp = make_mp_grid(**kwargs)
+    else:
+        Ymp, Zmp = kwargs['Ymp'], kwargs['Zmp']
+    valid = kwargs.get('valid', np.ones(Ymp.shape))
 
     fig, ax, nrows, ncols = get_fig_ax(features, **kwargs)
 
@@ -892,7 +895,7 @@ def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_se
             _, _ = plot_maps(temp, results, fig=fig, ax=ax[i // ncols, i % ncols:i % ncols + 2], valid=valid,
                          show_ylabel=show_ylabel, show_colorbar=show_colorbar, **kwargs)
         elif kwargs.get('method_map', 'KNN') == 'binned_stat':
-            _, _ = plot_maps(temp, {feature_to_map:results}, fig=fig, ax=ax[i // ncols, i % ncols:i % ncols + 2],
+            _, _ = plot_maps(temp, {feature_to_map:results}, Ymp=xbins, Zmp=ybins, fig=fig, ax=ax[i // ncols, i % ncols:i % ncols + 2],
                              show_ylabel=show_ylabel, show_colorbar=show_colorbar, **kwargs)
 
         if feature_to_slice in ['omni_CLA','omni_COA','CLA','COA', 'tilt']:
