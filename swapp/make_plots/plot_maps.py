@@ -938,7 +938,7 @@ def maps_by_sectors(df, feature_to_map, feature_to_slice, **kwargs):
                                             nb_iter, N_neighbours,
                                             max_distance, fig, ax, i, ncols, show_ylabel and ((i % ncols) == 0),
                                             show_colorbar and (((i % ncols) == (ncols - 1)) or i == (nb_sectors - 1)),
-                                            nb_sectors, kwargs)
+                                            kwargs)
 
     for a in ax[-1, i % ncols + 1:]:
         a.axis('off')
