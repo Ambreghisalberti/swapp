@@ -166,7 +166,7 @@ def plot_pos(df, **kwargs):
     fig, ax = planet_env.layout_earth_env(msh, figure=fig, axes=np.array([ax]), x_lim=x_lim, **kwargs)
     if 'title' in kwargs:
         fig.suptitle(kwargs['title'])
-    for a in ax:
+    for a in ax.ravel():
         a.set_aspect('equal')
 
 
@@ -539,7 +539,7 @@ def hist_by_CLA(BL, feature, **kwargs):
 
         stat, xbins, ybins, im = binned_statistic_2d(temp.Y.values, temp.Z.values, temp[feature].values,
                                                      statistic='mean', bins=kwargs.get('bins', 50))
-        stat = gaussian_filter_nan_datas(stat, 1)
+        stat = gaussian_filter_nan_datas(stat, kwargs.get('sigma',0))
 
         if cmap in diverging_cmaps:
             vmin, vmax = -np.nanmax(abs(stat)), np.nanmax(abs(stat))
