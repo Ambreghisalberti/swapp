@@ -874,10 +874,9 @@ def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_se
         valid = get_valid(feature_to_slice, min_sectors[i], max_sectors[i], description, temp, N_neighbours, max_distance,
                           kwargs)
     elif kwargs.get('method_map', 'KNN') == 'binned_stat':
-        stat, xbins, ybins, im = binned_statistic_2d(temp.Y.values, temp.Z.values, temp[feature_to_map].values,
+        results, xbins, ybins, im = binned_statistic_2d(temp.Y.values, temp.Z.values, temp[feature_to_map].values,
                                                      statistic='mean', bins=kwargs.get('bins', 50))
-        stat = gaussian_filter_nan_datas(stat, kwargs.get('sigma', 0))
-        vmin, vmax = update_vmin_vmax(stat, vmin, vmax, nb_iter, kwargs)
+        vmin, vmax = update_vmin_vmax(results, vmin, vmax, nb_iter, kwargs)
 
     if kwargs.get('plot_arrows', False):
         if kwargs.get('slice', False):
