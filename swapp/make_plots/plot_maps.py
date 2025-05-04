@@ -777,9 +777,9 @@ def plot_maps(df, interpolated_features, **kwargs):
     return fig, ax
 
 
-def update_vmin_vmax(results, feature_to_map, vmin, vmax, nb_iter, kwargs):
+def update_vmin_vmax(results, vmin, vmax, nb_iter, kwargs):
     if nb_iter == 0 and (('vmin' not in kwargs) or ('vmax' not in 'kwargs')):
-        vmin_temp, vmax_temp = np.nanmin(results[feature_to_map]), np.nanmax(results[feature_to_map])
+        vmin_temp, vmax_temp = np.nanmin(results), np.nanmax(results)
         if vmin_temp < vmin:
             vmin = vmin_temp
         if vmax_temp > vmax:
@@ -864,11 +864,18 @@ def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_se
                        N_neighbours,
                        max_distance, fig, ax, i, ncols, show_ylabel, show_colorbar, kwargs):
     temp = make_slice(df, feature_to_slice, min_sectors[i], max_sectors[i])
-    results, description = get_map_slice(feature_to_map, feature_to_slice, min_sectors[i], max_sectors[i], temp,
+    if kwargs.get('method_map','KNN')=='KNN':
+        results, description = get_map_slice(feature_to_map, feature_to_slice, min_sectors[i], max_sectors[i], temp,
                                          N_neighbours, **kwargs)
-    vmin, vmax = update_vmin_vmax(results, feature_to_map, vmin, vmax, nb_iter, kwargs)
-    valid = get_valid(feature_to_slice, min_sectors[i], max_sectors[i], description, temp, N_neighbours, max_distance,
-                      kwargs)
+        vmin, vmax = update_vmin_vmax(results[feature_to_map], vmin, vmax, nb_iter, kwargs)
+        valid = get_valid(feature_to_slice, min_sectors[i], max_sectors[i], description, temp, N_neighbours, max_distance,
+                          kwargs)
+    elif kwargs.get('method_map', 'KNN') == 'binned_stat':
+        stat, xbins, ybins, im = binned_statistic_2d(temp.Y.values, temp.Z.values, temp[feature_to_map].values,
+                                                     statistic='mean', bins=kwargs.get('bins', 50))
+        stat = gaussian_filter_nan_datas(stat, kwargs.get('sigma', 0))
+        vmin, vmax = update_vmin_vmax(stat, vmin, vmax, nb_iter, kwargs)
+
     if kwargs.get('plot_arrows', False):
         if kwargs.get('slice', False):
             inputs = (feature_to_slice, min_sectors[i], max_sectors[i], temp, N_neighbours)
@@ -879,8 +886,12 @@ def compute_one_sector(df, feature_to_map, feature_to_slice, min_sectors, max_se
 
     if nb_iter == 1:
         a = ax[i // ncols, i % ncols]
-        _, _ = plot_maps(temp, results, fig=fig, ax=ax[i // ncols, i % ncols:i % ncols + 2], valid=valid,
+        if kwargs.get('method_map','KNN')=='KNN':
+            _, _ = plot_maps(temp, results, fig=fig, ax=ax[i // ncols, i % ncols:i % ncols + 2], valid=valid,
                          show_ylabel=show_ylabel, show_colorbar=show_colorbar, **kwargs)
+        elif kwargs.get('method_map', 'KNN') == 'binned_stat':
+            _ = a.pcolormesh(xbins, ybins, stat.T, cmap=kwargs.get('cmap', 'jet'), vmin=vmin, vmax=vmax)
+
         if feature_to_slice in ['omni_CLA','omni_COA','CLA','COA', 'tilt']:
             title = (f'{feature_to_map}\nfor {round(min_sectors[i]*180/np.pi, 2)}° < {feature_to_slice} < '
                      f'{round(max_sectors[i]*180/np.pi, 2)}°\n{len(temp)} points')
@@ -927,7 +938,7 @@ def maps_by_sectors(df, feature_to_map, feature_to_slice, **kwargs):
                                             nb_iter, N_neighbours,
                                             max_distance, fig, ax, i, ncols, show_ylabel and ((i % ncols) == 0),
                                             show_colorbar and (((i % ncols) == (ncols - 1)) or i == (nb_sectors - 1)),
-                                            kwargs)
+                                            nb_sectors, kwargs)
 
     for a in ax[-1, i % ncols + 1:]:
         a.axis('off')
@@ -976,7 +987,7 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
                                             kwargs)
 
         results, description = get_map(feature_to_map + '_MSP', df, N_neighbours, **kwargs)
-        vmin, vmax = update_vmin_vmax(results, feature_to_map + '_MSP', vmin, vmax, nb_iter, kwargs)
+        vmin, vmax = update_vmin_vmax(results[feature_to_map + '_MSP'], vmin, vmax, nb_iter, kwargs)
         valid = get_valid('None', 0, 0, description, df, N_neighbours, max_distance, kwargs)
 
         if nb_iter == 1:
@@ -990,7 +1001,7 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
 
         # MSH
         results, _ = get_map(feature_to_map + '_MSH', df, N_neighbours, **kwargs)
-        vmin, vmax = update_vmin_vmax(results, feature_to_map + '_MSH', vmin, vmax, nb_iter, kwargs)
+        vmin, vmax = update_vmin_vmax(results[feature_to_map + '_MSH'], vmin, vmax, nb_iter, kwargs)
         if nb_iter == 1:
             _, _ = plot_maps(pd.DataFrame(df['Vtan1_MP_MSH', 'Vtan2_MP_MSH', 'Vn_MP_MSH'].values,
                                           index=df.index.values, columns=['Vtan1_MP', 'Vtan2_MP', 'Vn']),
