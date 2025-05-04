@@ -784,6 +784,7 @@ def plot_maps(df, results, **kwargs):
 
 
 def update_vmin_vmax(results, vmin, vmax, nb_iter, kwargs):
+    results = gaussian_filter_nan_datas(results, kwargs.get('sigma', 0))
     if nb_iter == 0 and (('vmin' not in kwargs) or ('vmax' not in 'kwargs')):
         vmin_temp, vmax_temp = np.nanmin(results), np.nanmax(results)
         if vmin_temp < vmin:
