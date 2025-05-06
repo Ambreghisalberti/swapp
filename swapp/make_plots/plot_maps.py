@@ -950,6 +950,9 @@ def maps_by_sectors(df, feature_to_map, feature_to_slice, **kwargs):
     for a in ax[-1, i % ncols + 1:]:
         a.axis('off')
 
+    for a in ax.ravel():
+        a.set_aspect('equal')
+        
     ax[0, 0].set_ylim(*kwargs.get('y_lim',(-17, 17)))
     fig.suptitle(kwargs.get('chosen_description', ''))
     fig.tight_layout()
