@@ -952,7 +952,7 @@ def maps_by_sectors(df, feature_to_map, feature_to_slice, **kwargs):
 
     for a in ax.ravel():
         a.set_aspect('equal')
-        
+
     ax[0, 0].set_ylim(*kwargs.get('y_lim',(-17, 17)))
     fig.suptitle(kwargs.get('chosen_description', ''))
     fig.tight_layout()
@@ -1002,7 +1002,7 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
         valid = get_valid('None', 0, 0, description, df, N_neighbours, max_distance, kwargs)
 
         if nb_iter == 1:
-            _, _ = plot_maps(pd.DataFrame(df['Vtan1_MP_MSP', 'Vtan2_MP_MSP', 'Vn_MP_MSP'].values,
+            _, _ = plot_maps(pd.DataFrame(df[['Vtan1_MP_MSP', 'Vtan2_MP_MSP', 'Vn_MP_MSP']].values,
                                           index=df.index.values, columns=['Vtan1_MP', 'Vtan2_MP', 'Vn']),
                              results, valid=valid, fig=fig, ax=ax[0, 0], show_colorbar=False, show_ylabel=True,
                              **kwargs)
@@ -1014,7 +1014,7 @@ def maps_by_sectors_and_ref_MSP_MSH(df, feature_to_map, feature_to_slice, **kwar
         results, _ = get_map(feature_to_map + '_MSH', df, N_neighbours, **kwargs)
         vmin, vmax = update_vmin_vmax(results[feature_to_map + '_MSH'], vmin, vmax, nb_iter, kwargs)
         if nb_iter == 1:
-            _, _ = plot_maps(pd.DataFrame(df['Vtan1_MP_MSH', 'Vtan2_MP_MSH', 'Vn_MP_MSH'].values,
+            _, _ = plot_maps(pd.DataFrame(df[['Vtan1_MP_MSH', 'Vtan2_MP_MSH', 'Vn_MP_MSH']].values,
                                           index=df.index.values, columns=['Vtan1_MP', 'Vtan2_MP', 'Vn']),
                              results, valid=valid, fig=fig, ax=ax.ravel()[nb_sectors + nrows:nb_sectors + nrows + 2],
                              show_ylabel=False, **kwargs)
