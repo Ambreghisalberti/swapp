@@ -753,10 +753,10 @@ def plot_maps(df, results, **kwargs):
     for i, feature in enumerate(features):
         a = ax[i // ncols, i % ncols]
 
-        if kwargs.get('method_map','KNN')=='KNN':
+        if kwargs.get('method_map','KNN') == 'KNN':
             to_plot = results[feature].copy()
             to_plot[valid == 0] = np.nan
-        elif kwargs.get('method_map','KNN')=='binned_stat':
+        elif kwargs.get('method_map','KNN') == 'binned_stat':
             to_plot = results[feature].copy()
         to_plot = gaussian_filter_nan_datas(to_plot, kwargs.get('sigma', 0))
         kwargsplot = get_kwargsplot(to_plot, **kwargs)

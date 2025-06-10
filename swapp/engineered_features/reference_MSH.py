@@ -122,23 +122,28 @@ def compute_ref_MSH_feature(half_orbit_df, feature, percentage):
             temp = temp[np.logical_and(temp['Np'].values > 15, temp['Vx'].values > -300)]  # probably MSH data (or BL)
 
             if len(temp) > 200:
+                temp = temp.sort_values(by='Np')[-int(len(temp)*0.5):]
                 temporary = temp[feature].values
                 ref_feature = np.median(temporary)
                 half_orbit_df.loc[hours[j]:hours[j + 1], f'ref_MSH_{feature}'] = ref_feature
 
+        # In the same half orbit, it's ok to interpolate or extrapolate neighbouring values
         half_orbit_df = half_orbit_df.interpolate(method='nearest')
         half_orbit_df = half_orbit_df.ffill()  # forward fill for the last nans in the end of the dataframe
         half_orbit_df = half_orbit_df.bfill()  # backward fill for the first nans in the beginning of the dataframe
 
-        if len(half_orbit_df[[f'ref_MSH_{feature}']].dropna()) > 0:
+        if len(half_orbit_df[[f'ref_MSH_{feature}']].dropna()) > 0:   # Reference values have been found
             ref_feature = half_orbit_df[f'ref_MSH_{feature}'].values
-        else:
+        else:   # No reference values have been found, so we're being less picky
+                # and only taking the most dense poriton of the half orbit
             half_orbit_df = half_orbit_df[columns].dropna().sort_values(by='Np')
             ref_feature = np.nan
             if len(half_orbit_df) > 0:
                 temporary = half_orbit_df[feature].values.flatten()
                 if int(len(temporary) * percentage) > 0:
                     ref_feature = np.median(temporary[-int(len(temporary) * percentage):])
+                    # Takes the 5% most dense of the half orbit, no matter how many points that makes
+                    # could take 200 if we wanted to make sense?
 
     else:
         ref_feature = np.nan
