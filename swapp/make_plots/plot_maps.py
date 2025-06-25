@@ -763,7 +763,7 @@ def plot_maps(df, results, **kwargs):
         kwargsplot = get_kwargsplot(to_plot, **kwargs)
         im = a.pcolormesh(Ymp, Zmp, to_plot, **kwargsplot)
         y, z = find_stagnation_line(to_plot, **kwargs)
-        a.plot(y,z,color='green')
+        a.scatter(y,z,color='green')
 
         a.tick_params(labelsize='small')
         a.set_title(feature)
@@ -1110,7 +1110,8 @@ def find_stagnation_line(Vz, **kwargs):
 
     # Select the longest contour as the main stagnation line
     if contours:
-        stagnation_line = max(contours, key=len)
+        # stagnation_line = max(contours, key=len)
+        stagnation_line = np.concatenate(contours)
     else:
         stagnation_line = None
 
