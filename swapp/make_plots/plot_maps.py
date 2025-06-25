@@ -18,6 +18,7 @@ import pandas as pd
 import os
 from datetime import timedelta
 from spok.models.planetary import mp_shue1998_normal, mp_shue1998_tangents
+from skimage import measure
 
 diverging_cmaps = ['PiYG', 'seismic', 'coolwarm']
 
@@ -761,6 +762,8 @@ def plot_maps(df, results, **kwargs):
         to_plot = gaussian_filter_nan_datas(to_plot, kwargs.get('sigma', 0))
         kwargsplot = get_kwargsplot(to_plot, **kwargs)
         im = a.pcolormesh(Ymp, Zmp, to_plot, **kwargsplot)
+        y, z = find_stagnation_line(to_plot, **kwargs)
+        a.plot(y,z,color='green')
 
         a.tick_params(labelsize='small')
         a.set_title(feature)
@@ -1091,3 +1094,31 @@ def plot_arrows(ax, Ymp, Zmp, Vy, Vz, step=40, factor=1.5, head_width=0.7):
         for j in range(0, len(Ymp[0]), step):
             ax.arrow(Ymp[i, j], Zmp[i, j], Vy[i, j]*factor, Vz[i, j]*factor, head_width=head_width)
 
+
+def find_stagnation_line(Vz, **kwargs):
+    if 'Y_mp' and 'Z_mp' in kwargs:
+        Y_grid, Z_grid = kwargs['Y_mp'], kwargs['Z_mp']
+    else:
+        _, Y_grid, Z_grid = make_mp_grid(**kwargs)
+    assert Y_grid.shape == Vz.shape, f"The coordinate grids must have the same shape as the flow map, but Y_mp is {Y_grid.shape}, Z_mp is {Z_grid.shape} and the map is {Vz.shape}."
+
+    # --- Step 1: Smooth the data to reduce noise ---
+    Vz_smooth = gaussian_filter_nan_datas(Vz, kwargs.get('sigma', 5))  # Utiliser ma fonction
+
+    # --- Step 2: Extract the zero contour (stagnation line) ---
+    contours = measure.find_contours(Vz_smooth, level=0)
+
+    # Select the longest contour as the main stagnation line
+    if contours:
+        stagnation_line = max(contours, key=len)
+    else:
+        stagnation_line = None
+
+    if stagnation_line is not None:
+        z_idx, y_idx = stagnation_line[:, 0], stagnation_line[:, 1]
+        y_line = [Y_grid[int(i), int(j)] for i, j in zip(z_idx, y_idx)]
+        z_line = [Z_grid[int(i), int(j)] for i, j in zip(z_idx, y_idx)]
+    else:
+        y_line, z_line = [], []
+
+    return y_line, z_line
