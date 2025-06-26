@@ -465,7 +465,7 @@ def f_interp(inputs):
 def make_maps(df, **kwargs):
     Xmp, Ymp, Zmp = make_mp_grid(**kwargs)
     if kwargs.get('balance',False):
-        df = equal_sample_data(df, kwargs.get('feature_to_balance','omni_CLA'), **kwargs)
+        df = equal_sample_data(df, kwargs.pop('feature_to_balance','omni_CLA'), **kwargs)
     pos, values = make_data_to_grid(df, **kwargs)
 
     if kwargs.get('N_neighbours_method') == 'automatic':
