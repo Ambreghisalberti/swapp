@@ -19,6 +19,7 @@ import os
 from datetime import timedelta
 from spok.models.planetary import mp_shue1998_normal, mp_shue1998_tangents
 from skimage import measure
+from sklearn.utils import resample
 
 diverging_cmaps = ['PiYG', 'seismic', 'coolwarm']
 
@@ -463,7 +464,8 @@ def f_interp(inputs):
 
 def make_maps(df, **kwargs):
     Xmp, Ymp, Zmp = make_mp_grid(**kwargs)
-
+    if kwargs.get('balance',False):
+        df = equal_sample_data(df, kwargs.get('feature_to_balance','omni_CLA'), **kwargs)
     pos, values = make_data_to_grid(df, **kwargs)
 
     if kwargs.get('N_neighbours_method') == 'automatic':
@@ -1123,3 +1125,30 @@ def find_stagnation_line(Vz, **kwargs):
         y_line, z_line = [], []
 
     return y_line, z_line
+
+
+def equal_sample_data(df, feature_to_balance, **kwargs):
+    equal_sampled_data = []
+
+    # Hist
+    stat, bins = plt.hist(df, feature_to_balance, bins=50)
+    # Choose nb of samples per bin (as only that 10% of bins have less than that (except for bins = 0, don't count)
+    nb_sample = np.quantile(stat[stat > 0], 0.2)
+
+    # For each bin:
+    min_sectors = bins[:-1]
+    max_sectors = bins[1:]
+    for i, (mini, maxi) in enumerate(zip(min_sectors, max_sectors)):
+        if stat[i] > 0:
+            temp = make_slice(df, feature_to_balance, mini, maxi)
+            # Sample
+            if len(temp) > nb_sample:
+                bin_sample = resample(temp, replace=False, n_samples=nb_sample, random_state=0)
+            elif len(temp) > 0:
+                bin_sample = resample(temp, replace=True, n_samples=nb_sample, random_state=0)
+            equal_sampled_data.append(bin_sample)
+
+    equal_sampled_data = np.concatenate(equal_sampled_data)
+    equal_sampled_data = pd.DataFrame(equal_sampled_data, columns=df.columns.values)
+
+    return equal_sampled_data
