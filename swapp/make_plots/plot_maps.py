@@ -404,7 +404,6 @@ def make_mp_grid(**kwargs):
         msh = Magnetosheath()
         Xmp, Ymp, Zmp = msh.magnetopause(theta, phi)
     elif coord == 'cartesian':
-        N_grid = 600
         th = np.linspace(0, 0.5 * np.pi, 3000)
         ph = np.linspace(-np.pi, np.pi, 3000)
         theta, phi = np.meshgrid(th, ph)
@@ -1108,7 +1107,7 @@ def find_stagnation_line(Vz, **kwargs):
     Vz_smooth = gaussian_filter_nan_datas(Vz, kwargs.get('sigma', 5))  # Utiliser ma fonction
 
     # --- Step 2: Extract the zero contour (stagnation line) ---
-    contours = measure.find_contours(Vz_smooth, level=0)
+    contours = measure.find_contours(Vz_smooth, level=kwargs.get('level',0))
 
     # Select the longest contour as the main stagnation line
     if contours:
