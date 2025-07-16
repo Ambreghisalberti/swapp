@@ -410,7 +410,7 @@ def make_mp_grid(**kwargs):
         msh = Magnetosheath()
         X, Y, Z = msh.magnetopause(theta, phi)
         X, Y, Z = X.flatten(), Y.flatten(), Z.flatten()
-        Ymp = np.linspace(-15, 15, N_grid)
+        Ymp = np.linspace(-15, 15, 2*N_grid)
         Zmp = np.linspace(-15, 15, N_grid)
         Ymp, Zmp = np.meshgrid(Ymp, Zmp)
         Ymp, Zmp = Ymp.flatten(), Zmp.flatten()
@@ -829,7 +829,7 @@ def get_map_from_path(path, feature_to_map, temp, N_neighbours, **kwargs):
         if len(temp) > N_neighbours:
             results = make_maps(temp, features=[feature_to_map], N_neighbours=N_neighbours, **kwargs)
         else:
-            results = make_maps(temp, features=[feature_to_map], N_neighbours=int(N_neighbours // 4), **kwargs)
+            results = make_maps(temp, features=[feature_to_map], N_neighbours=int(len(temp) // 4), **kwargs)
         pd.to_pickle(results, path)
     return results
 
