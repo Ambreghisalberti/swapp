@@ -480,6 +480,8 @@ def is_map_valid(df, **kwargs):
 
     _ = kwargs.pop('features', None)
     pos, values = make_data_to_grid(df, features=['X'], **kwargs)
+    if len(df) < kwargs.get('N_neighbours', 10000):
+        kwargs['N_neighbours'] = int(len(df) // 4)
     interp = train_knn(pos, values, **kwargs)
 
     max_distance = kwargs.get('max_distance', 2)
@@ -826,10 +828,9 @@ def get_map_from_path(path, feature_to_map, temp, N_neighbours, **kwargs):
     if not (kwargs.get('overwrite', False)) and os.path.isfile(path):
         results = pd.read_pickle(path)
     else:
-        if len(temp) > N_neighbours:
-            results = make_maps(temp, features=[feature_to_map], N_neighbours=N_neighbours, **kwargs)
-        else:
-            results = make_maps(temp, features=[feature_to_map], N_neighbours=int(len(temp) // 4), **kwargs)
+        if len(temp) < N_neighbours:
+            N_neighbours = int(len(temp) // 4)
+        results = make_maps(temp, features=[feature_to_map], N_neighbours=N_neighbours, **kwargs)
         pd.to_pickle(results, path)
     return results
 
