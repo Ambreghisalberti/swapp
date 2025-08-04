@@ -418,9 +418,9 @@ def make_mp_grid(**kwargs):
         model = KNeighborsRegressor(n_neighbors=1, weights='distance', n_jobs=1)
         model.fit(np.array([Y, Z]).T, X)
         Xmp = model.predict(np.array([Ymp, Zmp]).T)
-        Xmp = Xmp.reshape((N_grid, N_grid))
-        Ymp = Ymp.reshape((N_grid, N_grid))
-        Zmp = Zmp.reshape((N_grid, N_grid))
+        Xmp = Xmp.reshape((N_grid, 2*N_grid))
+        Ymp = Ymp.reshape((N_grid, 2*N_grid))
+        Zmp = Zmp.reshape((N_grid, 2*N_grid))
     else:
         raise Exception(f'coord should be either spherical or cartesian but is {coord}.')
 
