@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+from spacepy import coordinates as coord
+from spacepy.time import Ticktock
 
 
 def intersect(df1: pd.DataFrame, df2: pd.DataFrame) -> (pd.DataFrame,pd.DataFrame):
@@ -41,3 +43,12 @@ def get_consecutive_interval(times, dt=np.timedelta64(5, 's')):
     stops = temp.groupby('group').apply(lambda x: x.index.values[-1]).values
     assert (starts > stops).sum() == 0
     return starts, stops
+
+def gse_to_gsm(df):
+    cvals = coord.Coords(df.iloc[:,:3].values, 'GSE', 'car')
+    cvals.ticks = Ticktock(df.index.values.astype(str), 'ISO')
+    newcoord = cvals.convert('GSM', 'car').data
+    df_gsm = pd.DataFrame(columns = df.columns, index = df.index.values)
+    for i,col in enumerate(df.columns):
+        df_gsm[col] = newcoord[:,i]
+    return df_gsm
