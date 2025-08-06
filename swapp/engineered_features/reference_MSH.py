@@ -193,7 +193,7 @@ def compute_apogees_perigees(df, sat, description=''):
     return apogee_times, perigee_times
 
 
-def compute_ref_MSH_values(all_data, sat, path, apogee_times, perigee_times):
+def compute_ref_MSH_values(all_data, sat, path, apogee_times, perigee_times, **kwargs):
     """ The dataframe all_data must already contain the following features : """
 
     features = ['Vy', 'Vz', 'Vx', 'Vn_MP', 'Vtan1_MP', 'Vtan2_MP', 'V', 'Np', 'Tpara',
@@ -213,7 +213,7 @@ def compute_ref_MSH_values(all_data, sat, path, apogee_times, perigee_times):
     '''
     for feature in features:
         get_ref_MSH_feature_over_time(apogee_times, perigee_times, all_data, feature,
-                                      percentage=0.05)
+                                      percentage=0.05, **kwargs)
         all_data.to_pickle(path)
         all_data.to_pickle(path[:-3] + '_copy.pkl')
         pd.to_pickle(all_data[['ref_MSH_' + feature]],
@@ -252,7 +252,7 @@ def normalize_flow_by_Va(all_data, path):
     all_data.to_pickle(path)
 
 
-def compute_all_ref_MSH_data(all_data, sat, path):
+def compute_all_ref_MSH_data(all_data, sat, path, **kwargs):
     """ This dataframe must contain the following columns :
     X, Y, Z, Vy, Vz, Vx, Vn_MP, Vtan1_MP, Vtan2_MP, V, Np, Tpara, Tperp, Tp, logNp, logTp, anisotropy, Va """
 
@@ -260,6 +260,6 @@ def compute_all_ref_MSH_data(all_data, sat, path):
     # and adds in all_data the columns closest_apogee and closest_perigee
     apogee_times, perigee_times = compute_apogees_perigees(all_data, sat)
     all_data = all_data[all_data.R.values > 7]
-    compute_ref_MSH_values(all_data, sat, path, apogee_times, perigee_times)
+    compute_ref_MSH_values(all_data, sat, path, apogee_times, perigee_times, **kwargs)
     compute_gap_to_MSH(all_data, path)
     normalize_flow_by_Va(all_data, path)
