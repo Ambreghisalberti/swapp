@@ -157,7 +157,8 @@ def get_ref_MSH_feature_over_time(apogee_times, perigee_times, df, feature, **kw
 
     df['ref_MSH_' + feature] = np.nan
 
-    apogee_times, perigee_times = preprocess_perigees_apogees(apogee_times, perigee_times)
+    if kwargs.get('preprocess_apogees',True):
+        apogee_times, perigee_times = preprocess_perigees_apogees(apogee_times, perigee_times)
 
     for i, apogee in enumerate(apogee_times):
         assert perigee_times[i] < apogee, (f"Perigee {perigee_times[i]} (n°{i}) should be before apogee {apogee} "
@@ -258,7 +259,7 @@ def compute_all_ref_MSH_data(all_data, sat, path):
     # Also saves the apogee and perigee times in pickle files,
     # and adds in all_data the columns closest_apogee and closest_perigee
     apogee_times, perigee_times = compute_apogees_perigees(all_data, sat)
-    all_data = all_data[all_data.R.values > 9]
+    all_data = all_data[all_data.R.values > 7]
     compute_ref_MSH_values(all_data, sat, path, apogee_times, perigee_times)
     compute_gap_to_MSH(all_data, path)
     normalize_flow_by_Va(all_data, path)

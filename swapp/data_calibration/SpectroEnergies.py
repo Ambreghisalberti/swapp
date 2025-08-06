@@ -74,7 +74,7 @@ def download_and_interpolate_spectro(inputs):
     t1 = time.time()
 
     try:
-        product = spz.get_data(path, intervals[0][0], intervals[0][1])
+        product = spz.get_data(path, intervals[0][0], intervals[0][1])[0]
     except:
         product = None
 
