@@ -17,7 +17,7 @@ def fit_cold_ions(df, energies, **kwargs):
 
 def fit_cold_ions_one_time(x, y, **kwargs):
     max_energy = kwargs.get('max_energy', 100)
-    max_cold, center_cold, std_cold, err = fit_populations(x, y, 0, max_energy, **kwargs)
+    max_cold, center_cold, std_cold, err = fit_populations(x, y, 0, max_energy)
     if (center_cold <= x[x < max_energy][0]) or (center_cold >= x[x < max_energy][-1]):
         max_cold, center_cold, std_cold = 0, -1, -1
     if std_cold > max_energy:
