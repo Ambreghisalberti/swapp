@@ -765,8 +765,10 @@ def plot_maps(df, results, **kwargs):
         to_plot = gaussian_filter_nan_datas(to_plot, kwargs.get('sigma', 0))
         kwargsplot = get_kwargsplot(to_plot, **kwargs)
         im = a.pcolormesh(Ymp, Zmp, to_plot, **kwargsplot)
-        y, z = find_stagnation_line(to_plot, **kwargs)
-        a.scatter(y,z,color='green')
+
+        if kwargs.get('plot_stagnation_line',True):
+            y, z = find_stagnation_line(to_plot, **kwargs)
+            a.scatter(y,z,color='green')
 
         a.tick_params(labelsize='small')
         a.set_title(feature)
