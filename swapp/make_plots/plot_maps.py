@@ -591,7 +591,7 @@ def make_description_from_kwargs(N_neighbours, **kwargs):
     plot_kwargs = ['ncols', 'nrows', 'min_cla', 'max_cla', 'cmap', 'nb_sectors', 'sectors', 'min_sectors',
                    'max_sectors', 'sigma', 'fig', 'ax', 'valid', 'show_ylabel', 'show_colorbar', 'plot_arrows',
                    'vmax', 'vmin', 'step', 'head_width', 'factor', 'slice', 'arrows_coordinates', 'x_lim',
-                   'y_lim', 'z_lim']
+                   'y_lim', 'z_lim','plot_stagnation_line']
     # First order by alphabetical order, to avoid recomputing just because we gave kwargs in a different order
     # Second, don't use plot kwargs because they have no effect on data to plot
     keys = list(kwargs.keys())
