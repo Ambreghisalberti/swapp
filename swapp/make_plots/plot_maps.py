@@ -1159,7 +1159,7 @@ def equal_sample_data_one_feature(df, feature_to_balance, **kwargs):
 def equal_sample_data(df, features_to_balance, **kwargs):
     # Need to check if the first uniformed ones stay uniform after uniformizing the others.
     # It might not if some features are correlated!
-    if not isinstance(features_to_balance, np.ndarray):
+    if not isinstance(features_to_balance, np.ndarray) and not isinstance(features_to_balance, list):
         features_to_balance = [features_to_balance]
     for feature in features_to_balance:
         df = equal_sample_data_one_feature(df, feature, **kwargs)
