@@ -1136,7 +1136,7 @@ def equal_sample_data_one_feature(df, feature_to_balance, **kwargs):
     # Hist
     stat, bins, _ = plt.hist(df[feature_to_balance].values, bins=kwargs.get('bins_balance',50))
     # Choose nb of samples per bin (as only that 10% of bins have less than that (except for bins = 0, don't count)
-    nb_sample = int(np.quantile(stat[stat > 0], 0.2))
+    nb_sample = int(np.quantile(stat[stat > 0], 0.5))
 
     # For each bin:
     min_sectors = bins[:-1]
