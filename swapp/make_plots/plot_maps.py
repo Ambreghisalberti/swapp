@@ -569,7 +569,7 @@ def hist_by_CLA(BL, feature, **kwargs):
 def make_CLA_slice(df, feature, min_cla, max_cla):
     if (min_cla >= -np.pi) and (max_cla <= np.pi):
         temp = df[df[feature].values >= min_cla]
-        temp = temp[df[feature].values < max_cla]
+        temp = temp[temp[feature].values < max_cla]
     elif min_cla < -np.pi:
         temp1 = df[df[feature].values >= min_cla + 2 * np.pi]
         temp2 = df[df[feature].values < max_cla]
