@@ -539,7 +539,8 @@ def hist_by_CLA(BL, feature, **kwargs):
     if len(ax.shape) == 1:
         ax = np.array([ax])
     for i in range(nb_sectors):
-        temp = make_CLA_slice(BL, sectors_CLA[i], sectors_CLA[i+1])
+        temp = make_CLA_slice(BL, 'omni_CLA', sectors_CLA[i], sectors_CLA[i+1])
+        temp = make_CLA_slice(BL, 'omni_CLA', sectors_CLA[i], sectors_CLA[i+1])
 
         stat, xbins, ybins, im = binned_statistic_2d(temp.Y.values, temp.Z.values, temp[feature].values,
                                                      statistic='mean', bins=kwargs.get('bins', 50))
@@ -565,24 +566,24 @@ def hist_by_CLA(BL, feature, **kwargs):
     return fig, ax
 
 
-def make_CLA_slice(df, min_cla, max_cla):
+def make_CLA_slice(df, feature, min_cla, max_cla):
     if (min_cla >= -np.pi) and (max_cla <= np.pi):
-        temp = df[df.omni_CLA.values >= min_cla]
-        temp = temp[temp.omni_CLA.values < max_cla]
+        temp = df[df[feature].values >= min_cla]
+        temp = temp[df[feature].values < max_cla]
     elif min_cla < -np.pi:
-        temp1 = df[df.omni_CLA.values >= min_cla + 2 * np.pi]
-        temp2 = df[df.omni_CLA.values < max_cla]
+        temp1 = df[df[feature].values >= min_cla + 2 * np.pi]
+        temp2 = df[df[feature].values < max_cla]
         temp = pd.concat([temp1, temp2])
     else:  # sectors_CLA[i+1] > np.pi
-        temp1 = df[df.omni_CLA.values >= min_cla]
-        temp2 = df[df.omni_CLA.values < max_cla - 2 * np.pi]
+        temp1 = df[df[feature].values >= min_cla]
+        temp2 = df[df[feature].values < max_cla - 2 * np.pi]
         temp = pd.concat([temp1, temp2])
     return temp
 
 
 def make_slice(df, feature, min_val, max_val):
     if 'CLA' in feature or 'COA' in feature:
-        return make_CLA_slice(df, min_val, max_val)
+        return make_CLA_slice(df, feature, min_val, max_val)
     else:
         return df[np.logical_and(min_val < df[feature].values, df[feature].values < max_val)]
 
@@ -1129,7 +1130,7 @@ def find_stagnation_line(Vz, **kwargs):
     return y_line, z_line
 
 
-def equal_sample_data(df, feature_to_balance, **kwargs):
+def equal_sample_data_one_feature(df, feature_to_balance, **kwargs):
     equal_sampled_data = []
 
     # Hist
@@ -1154,3 +1155,12 @@ def equal_sample_data(df, feature_to_balance, **kwargs):
     equal_sampled_data = pd.DataFrame(equal_sampled_data, columns=df.columns.values)
     plt.close('all')
     return equal_sampled_data
+
+def equal_sample_data(df, features_to_balance, **kwargs):
+    # Need to check if the first uniformed ones stay uniform after uniformizing the others.
+    # It might not if some features are correlated!
+    if not isinstance(features_to_balance, np.ndarray):
+        features_to_balance = [features_to_balance]
+    for feature in features_to_balance:
+        df = equal_sample_data_one_feature(df, feature, **kwargs)
+    return df
