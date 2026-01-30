@@ -489,7 +489,7 @@ def is_map_valid(df, **kwargs):
     for i in range(Xmp.shape[0]):
         for j in range(Xmp.shape[1]):
             distances, indices = interp.kneighbors([[Xmp[i, j], Ymp[i, j], Zmp[i, j]]])
-            if np.min(distances) > max_distance:
+            if np.median(distances) > max_distance:
                 valid[i, j] = False
     return valid
 
@@ -1156,11 +1156,48 @@ def equal_sample_data_one_feature(df, feature_to_balance, **kwargs):
     plt.close('all')
     return equal_sampled_data
 
+def equal_sample_data_two_features(df, feature_to_balance1, feature_to_balance2, **kwargs):
+    equal_sampled_data = []
+
+    # Hist
+    stat, binsx, binsy, _ = plt.hist2d(df[feature_to_balance1].values, df[feature_to_balance2].values,
+                                      bins=kwargs.get('bins_balance',30))
+    # Choose nb of samples per bin (as only that 10% of bins have less than that (except for bins = 0, don't count)
+    nb_sample = int(np.quantile(stat[stat > 0], kwargs.get('quantile_size_resample',0.5)))
+
+    # For each bin:
+    min_sectorsx = binsx[:-1]
+    max_sectorsx = binsx[1:]
+    min_sectorsy = binsy[:-1]
+    max_sectorsy = binsy[1:]
+    for i, (minix, maxix) in enumerate(zip(min_sectorsx, max_sectorsx)):
+        for j, (miniy, maxiy) in enumerate(zip(min_sectorsy, max_sectorsy)):
+            if stat[i,j] > 0:
+                temp = make_slice(df, feature_to_balance1, minix, maxix)
+                temp = make_slice(temp, feature_to_balance2, miniy, maxiy)
+                # Sample
+                if len(temp) > nb_sample:
+                    bin_sample = resample(temp, replace=False, n_samples=nb_sample, random_state=0)
+                elif len(temp) > 0:
+                    bin_sample = resample(temp, replace=True, n_samples=nb_sample, random_state=0)
+                equal_sampled_data.append(bin_sample)
+
+    equal_sampled_data = np.concatenate(equal_sampled_data)
+    equal_sampled_data = pd.DataFrame(equal_sampled_data, columns=df.columns.values)
+    plt.close('all')
+    return equal_sampled_data
+
 def equal_sample_data(df, features_to_balance, **kwargs):
     # Need to check if the first uniformed ones stay uniform after uniformizing the others.
     # It might not if some features are correlated!
     if not isinstance(features_to_balance, np.ndarray) and not isinstance(features_to_balance, list):
         features_to_balance = [features_to_balance]
+
+    if 'omni_COA' in features_to_balance and 'omni_CLA' in features_to_balance:
+        df = equal_sample_data_two_features(df, 'omni_COA','omni_CLA', **kwargs)
+        features_to_balance.remove('omni_COA')
+        features_to_balance.remove('omni_CLA')
+
     for feature in features_to_balance:
         df = equal_sample_data_one_feature(df, feature, **kwargs)
     return df
