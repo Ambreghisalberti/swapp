@@ -8,6 +8,7 @@ from swapp.make_plots.plot_functions import make_bins
 from spok.models.planetary import mp_shue1997
 from matplotlib.colors import LogNorm
 from sklearn.neighbors import KNeighborsRegressor, RadiusNeighborsRegressor
+from sklearn.neighbors import NearestNeighbors
 from multiprocessing import Pool
 import numpy as np
 import matplotlib.pyplot as plt
@@ -1113,7 +1114,6 @@ def find_stagnation_line(Vz, **kwargs):
     # --- Step 2: Extract the zero contour (stagnation line) ---
     contours = measure.find_contours(Vz_smooth, level=kwargs.get('level',0))
 
-    # Select the longest contour as the main stagnation line
     if contours:
         # stagnation_line = max(contours, key=len)
         stagnation_line = np.concatenate(contours)
@@ -1126,6 +1126,7 @@ def find_stagnation_line(Vz, **kwargs):
         z_line = [Z_grid[int(i), int(j)] for i, j in zip(z_idx, y_idx)]
     else:
         y_line, z_line = [], []
+
 
     return y_line, z_line
 
@@ -1200,4 +1201,385 @@ def equal_sample_data(df, features_to_balance, **kwargs):
 
     for feature in features_to_balance:
         df = equal_sample_data_one_feature(df, feature, **kwargs)
+    return df
+
+
+def knn_weighted_feature_map(
+        BL,
+        feature_to_map,
+        weights_feature,
+        Xgrid,  # has the shape of df[['X','Y','Z']].values, but the coordinates of a grid
+        k_neighbors=2000,
+        eps=1e-6, **kwargs):
+    # Sample weight = inverse density
+    sample_weights = BL[weights_feature].values
+    # Normalize for numerical stability (should be already done, but just in case)
+    sample_weights /= np.mean(sample_weights)
+
+    # KNN
+    X = BL[['normalized_X', 'normalized_Y', 'normalized_Z']].values.astype(np.float32)
+    y = BL[feature_to_map].values.astype(np.float64)
+    reg_nn = NearestNeighbors(n_neighbors=k_neighbors)
+    reg_nn.fit(X)
+    distances, indices = reg_nn.kneighbors(Xgrid)
+
+    # Combine weights
+    wd = 1.0 / (distances + eps)
+    # Density-based weights (looked up per neighbor)
+    wc = sample_weights[indices]
+    # Combined weights
+    w = wd * wc
+
+    # Weighted Average
+    y_neighbors = y[indices]
+    mapped_feature = np.sum(w * y_neighbors, axis=1) / np.sum(w, axis=1)
+
+    valid = (np.median(distances, axis=1) <= kwargs.get('median_distance', 3)).astype(float)
+    distance_to_barycenter = np.sqrt((np.median(X[indices, 0], axis=1) - Xgrid[:, 0]) ** 2 + (
+                np.median(X[indices, 1], axis=1) - Xgrid[:, 1]) ** 2 + (
+                                                 np.median(X[indices, 2], axis=1) - Xgrid[:, 2]) ** 2)
+    valid *= (distance_to_barycenter <= kwargs.get('max_distance_barycenter', 1)).astype(float)
+
+    return mapped_feature, valid
+
+
+def knn_mission_participation(
+        BL,
+        sat,
+        weights_feature,
+        Xgrid,  # has the shape of df[['X','Y','Z']].values, but the coordinates of a grid
+        k_neighbors=2000,
+        eps=1e-6, **kwargs):
+    # Sample weight = inverse density
+    sample_weights = BL[weights_feature].values
+    # Normalize for numerical stability (should be already done, but just in case)
+    sample_weights /= np.mean(sample_weights)
+
+    # KNN
+    X = BL[['normalized_X', 'normalized_Y', 'normalized_Z']].values.astype(np.float32)
+    sats = BL.sat.values
+    reg_nn = NearestNeighbors(n_neighbors=k_neighbors)
+    reg_nn.fit(X)
+    distances, indices = reg_nn.kneighbors(Xgrid)
+
+    # Combine weights
+    wd = 1.0 / (distances + eps)
+    # Density-based weights (looked up per neighbor)
+    wc = sample_weights[indices]
+    # Combined weights
+    w = wd * wc
+
+    # Weighted Average
+    sat_neighbors = sats[indices]
+    map_sat_participation = np.sum(w * (sat_neighbors == sat).astype(float), axis=1) / np.sum(w, axis=1)
+
+    valid = (np.median(distances, axis=1) <= kwargs.get('median_distance', 3)).astype(float)
+    distance_to_barycenter = np.sqrt((np.median(X[indices, 0], axis=1) - Xgrid[:, 0]) ** 2 + (
+                np.median(X[indices, 1], axis=1) - Xgrid[:, 1]) ** 2 + (
+                                                 np.median(X[indices, 2], axis=1) - Xgrid[:, 2]) ** 2)
+    valid *= (distance_to_barycenter <= kwargs.get('max_distance_barycenter', 3)).astype(float)
+
+    map_sat_participation[valid == 0] = np.nan
+
+    return map_sat_participation
+
+
+def get_weights_gaussian(df, list_conditions):
+    weights = np.ones(len(df))
+
+    for feature, center, std in list_conditions:
+        if feature == 'omni_CLA':
+            clas = (df.omni_CLA.values - center + np.pi) % (2 * np.pi) - np.pi + center
+            weights *= np.exp(-(clas - center) ** 2 / (2 * std ** 2))
+            weights[abs(clas - center) >= std] = 0
+        elif feature == 'omni_COA':
+            coas = (df.omni_COA.values - center + np.pi / 2) % np.pi - np.pi / 2 + center
+            weights *= np.exp(-(coas - center) ** 2 / (2 * std ** 2))
+            weights[abs(coas - center) >= std] = 0
+        else:
+            weights *= np.exp(-(df[feature].values - center) ** 2 / std)
+            weights[abs(df[feature].values - center) >= std] = 0
+
+    weights = weights / np.nansum(weights).item()
+    df2 = df.copy()
+    df2['weights'] = weights
+    return df2
+
+
+def patchup_map_tilt(df, **kwargs):
+    Xmp, Ymp, Zmp = make_mp_grid(N_grid=100, coord='cartesian')
+
+    nb_sectors = kwargs.get('nb_sectors_tilt', 5)
+    tilts = np.linspace(-35, 35, nb_sectors + 1)
+    min_tilts = tilts[:-1]
+    max_tilts = tilts[1:]
+
+    ncols = 4
+    nrows = int(np.ceil((nb_sectors + 2) / ncols))
+    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, 5 * nrows))
+    fig2, ax2 = plt.subplots(figsize=(15, 15))
+
+    center_cla = kwargs.get('center_cla', -3 * np.pi / 4)
+    std_cla = kwargs.get('std_cla', 20 * np.pi / 180)
+
+    ybins = np.linspace(-15, 15, 201)
+    zbins = np.linspace(-15, 15, 101)
+    stat_tilt, xbins, ybins, im = binned_statistic_2d(df.Y.values, df.Z.values, df.tilt.values * 180 / np.pi,
+                                                      statistic='median', bins=(ybins, zbins))
+    stat_tilt = gaussian_filter_nan_datas(stat_tilt.T, 3)
+    im = ax[-1, -1].pcolormesh(xbins, ybins, stat_tilt, cmap='seismic', vmax=35, vmin=-35)
+    fig.colorbar(im, ax=ax[-1, -1])
+    ax[-1, -1].axvline(0, linestyle='--', color='k')
+    ax[-1, -1].axhline(0, linestyle='--', color='k')
+    ax[-1, -1].set_aspect('equal')
+
+    lines = []
+    for i, (mini_tilt, maxi_tilt) in enumerate(zip(min_tilts, max_tilts)):
+
+        std_tilt = (maxi_tilt - mini_tilt) / 2 * np.pi / 180
+        center_tilt = (maxi_tilt + mini_tilt) / 2 * np.pi / 180
+        df2 = get_weights_gaussian(df, [('omni_CLA', center_cla, std_cla), ('tilt', center_tilt, std_tilt)])
+        temp = df2[df2.weights.values > 0]
+        mapped_feature, valid = knn_weighted_feature_map(temp, 'dVz', 'weights',
+                                                         np.array([Xmp.flatten(), Ymp.flatten(), Zmp.flatten()]).T,
+                                                         **kwargs)
+        mapped_feature[valid == 0] = np.nan
+        mapped_feature[Xmp.flatten() < 0.01] = np.nan
+        if (~np.isnan(mapped_feature)).sum() > 0:
+            im = ax[i // ncols, i % ncols].pcolormesh(Ymp, Zmp,
+                                                      gaussian_filter_nan_datas(mapped_feature.reshape(Xmp.shape),
+                                                                                kwargs.get('sigma', 5)), cmap='seismic',
+                                                      vmin=-100, vmax=100)
+        else:
+            im = ax[i // ncols, i % ncols].pcolormesh(Ymp, Zmp, mapped_feature.reshape(Xmp.shape))
+
+        fig.colorbar(im, ax=ax[i // ncols, i % ncols])
+        ax[i // ncols, i % ncols].axvline(0, linestyle='--', color='k')
+        ax[i // ncols, i % ncols].axhline(0, linestyle='--', color='k')
+        ax[i // ncols, i % ncols].set_aspect('equal')
+        mean = np.sum(temp.tilt.values * temp.weights.values) / np.sum(temp.weights.values).item()
+        std = np.sqrt(np.sum((temp.tilt.values - mean) ** 2 * (temp.weights.values) / np.sum(temp.weights.values)))
+        ax[i // ncols, i % ncols].set_title(
+            f'{len(temp)} points\nTilt = {round(center_tilt * 180 / np.pi, 2)}° ({round(mean * 180 / np.pi, 2)}' + r'$\pm$' + f'{round(std * 180 / np.pi, 2)}°)')
+        y, z = find_stagnation_line(mapped_feature.reshape(Xmp.shape), Y_mp=Ymp, Z_mp=Zmp, **kwargs)
+        ax[i // ncols, i % ncols].scatter(y, z, color='green')
+        ax2.scatter(y, z, label=f'tilt={round((mini_tilt + maxi_tilt) / 2, 2)}°', s=50, marker='+')
+
+        belongs = np.logical_and(stat_tilt > mini_tilt, stat_tilt <= maxi_tilt).flatten()
+        mapped_feature[~belongs] = np.nan
+        if (~np.isnan(mapped_feature)).sum() > 4:
+            y, z = find_stagnation_line(mapped_feature.reshape(Xmp.shape), Y_mp=Ymp, Z_mp=Zmp, **kwargs)
+        else:
+            y, z = [], []
+        lines += [(y, z)]
+
+    # And global
+    df2 = get_weights_gaussian(df, [('omni_CLA', center_cla, std_cla)])
+    temp = df2[df2.weights.values > 0]
+    mapped_feature, valid = knn_weighted_feature_map(temp, 'dVz', 'weights',
+                                                     np.array([Xmp.flatten(), Ymp.flatten(), Zmp.flatten()]).T,
+                                                     k_neighbors=kwargs.get('k_neighbors', 2000), **kwargs)
+    mapped_feature[valid == 0] = np.nan
+    mapped_feature[Xmp.flatten() < 0.01] = np.nan
+    if (~np.isnan(mapped_feature)).sum() > 0:
+        im = ax[-1, -2].pcolormesh(Ymp, Zmp,
+                                   gaussian_filter_nan_datas(mapped_feature.reshape(Xmp.shape), kwargs.get('sigma', 5)),
+                                   cmap='seismic', vmin=-100, vmax=100)
+    else:
+        im = ax[-1, -2].pcolormesh(Ymp, Zmp, mapped_feature.reshape(Xmp.shape))
+
+    fig.colorbar(im, ax=ax[-1, -2])
+    ax[-1, -2].axvline(0, linestyle='--', color='k')
+    ax[-1, -2].axhline(0, linestyle='--', color='k')
+    ax[-1, -2].set_aspect('equal')
+    for (y, z), mini, maxi in zip(lines, min_tilts, max_tilts):
+        ax[-1, -2].scatter(y, z, label=f'tilt={round((mini + maxi) / 2, 2)}°')
+    ax[-1, -2].legend()
+    ax[-1, -2].set_aspect('equal')
+    mean = np.sum(temp.tilt.values * temp.weights.values) / np.sum(temp.weights.values).item()
+    std = np.sqrt(np.sum((temp.tilt.values - mean) ** 2 * (temp.weights.values) / np.sum(temp.weights.values)))
+    ax[-1, -2].set_title(
+        f'{len(temp)} points\nAll tilts ({round(mean * 180 / np.pi, 2)}' + r'$\pm$' + f'{round(std * 180 / np.pi, 2)}°)')
+
+    ydeduced, zdeduced = [], []
+    for yi, zi in lines:
+        ydeduced += yi
+        zdeduced += zi
+    ax2.scatter(ydeduced, zdeduced, label=f'Patched up line', s=50)
+    ax2.axvline(0, linestyle='--', color='k')
+    ax2.axhline(0, linestyle='--', color='k')
+    ax2.set_aspect('equal')
+    ax2.set_title(
+        f'{len(temp)} points\nAll tilts ({round(mean * 180 / np.pi, 2)}' + r'$\pm$' + f'{round(std * 180 / np.pi, 2)}°)')
+    if (~np.isnan(mapped_feature)).sum() > 4:
+        y, z = find_stagnation_line(mapped_feature.reshape(Xmp.shape), Y_mp=Ymp, Z_mp=Zmp, **kwargs)
+    else:
+        y, z = [], []
+    ax2.scatter(y, z, label='Real line', s=50)
+    ax2.legend()
+
+
+def cla_tilt_diag(df, **kwargs):
+    Xmp, Ymp, Zmp = make_mp_grid(N_grid=100, coord='cartesian')
+
+    nb_sectors = kwargs.get('nb_sectors_tilt', 3)
+    tilts = np.linspace(-35, 35, nb_sectors + 1)
+    min_tilts = tilts[:-1]
+    max_tilts = tilts[1:]
+
+    min_clas = np.array([-np.pi, -5 * np.pi / 4, np.pi / 2])
+    max_clas = np.array([-np.pi / 2, -3 * np.pi / 4, np.pi])
+
+    ncols = 3
+    nrows = 4
+    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 5, 5 * nrows))
+
+    if kwargs.get('diff_local', True):
+        for i, (mini_tilt, maxi_tilt) in enumerate(zip(min_tilts, max_tilts)):
+            std_tilt = (maxi_tilt - mini_tilt) / 2 * np.pi / 180
+            center_tilt = (maxi_tilt + mini_tilt) / 2 * np.pi / 180
+            for j, (mini_cla, maxi_cla) in enumerate(zip(min_clas, max_clas)):
+                std_cla = (maxi_cla - mini_cla) / 2
+                center_cla = (maxi_cla + mini_cla) / 2
+                df2 = get_weights_gaussian(df, [('omni_CLA', center_cla, std_cla), ('tilt', center_tilt, std_tilt)])
+                temp = df2[df2.weights.values > 0]
+                # temp = externalBL.copy()
+                mapped_feature, valid = knn_weighted_feature_map(temp, 'dVz', 'weights', np.array(
+                    [Xmp.flatten(), Ymp.flatten(), Zmp.flatten()]).T, **kwargs)
+                mapped_feature[valid == 0] = np.nan
+                mapped_feature[Xmp.flatten() < 0.01] = np.nan
+                im = ax[i, j].pcolormesh(Ymp, Zmp, gaussian_filter_nan_datas(mapped_feature.reshape(Xmp.shape),
+                                                                             kwargs.get('sigma', 5)), cmap='seismic',
+                                         vmin=-100, vmax=100)
+                fig.colorbar(im, ax=ax[i, j])
+                ax[i, j].axvline(0, linestyle='--', color='k')
+                ax[i, j].axhline(0, linestyle='--', color='k')
+                ax[i, j].set_aspect('equal')
+                mean = np.sum(temp.tilt.values * temp.weights.values) / np.sum(temp.weights.values).item()
+                std = np.sqrt(
+                    np.sum((temp.tilt.values - mean) ** 2 * (temp.weights.values) / np.sum(temp.weights.values)))
+                clas = (temp.omni_CLA.values - center_cla + np.pi) % (2 * np.pi) - np.pi + center_cla
+                mean_cla = np.sum(clas * temp.weights.values) / np.sum(temp.weights.values).item()
+                std_cla = np.sqrt(np.sum((clas - mean_cla) ** 2 * (temp.weights.values) / np.sum(temp.weights.values)))
+                ax[i, j].set_title(
+                    f'{len(temp)} points\nTilt = {round(center_tilt * 180 / np.pi, 2)}° ({round(mean * 180 / np.pi, 2)}' + r'$\pm$' + f'{round(std * 180 / np.pi, 2)}°)\nCLA = {round(center_cla * 180 / np.pi, 2)}° ({round(mean_cla * 180 / np.pi, 2)}' + r'$\pm$' + f'{round(std_cla * 180 / np.pi, 2)}°)')
+                y, z = find_stagnation_line(mapped_feature.reshape(Xmp.shape), Y_mp=Ymp, Z_mp=Zmp, **kwargs)
+                ax[i, j].scatter(y, z, color='green')
+                ax[-1, j].scatter(y, z, label=f'{round((maxi_tilt + mini_tilt) / 2, 2)}°')
+    else:
+        df['weights'] = 1 / len(df)
+        mapped_feature_msh, valid = knn_weighted_feature_map(df, 'Vz_MSH', 'weights',
+                                                             np.array([Xmp.flatten(), Ymp.flatten(), Zmp.flatten()]).T,
+                                                             **kwargs)
+        mapped_feature_msh[valid == 0] = np.nan
+        mapped_feature_msh[Xmp.flatten() < 0.01] = np.nan
+
+        for i, (mini_tilt, maxi_tilt) in enumerate(zip(min_tilts, max_tilts)):
+            std_tilt = (maxi_tilt - mini_tilt) / 2 * np.pi / 180
+            center_tilt = (maxi_tilt + mini_tilt) / 2 * np.pi / 180
+            for j, (mini_cla, maxi_cla) in enumerate(zip(min_clas, max_clas)):
+                std_cla = (maxi_cla - mini_cla) / 2
+                center_cla = (maxi_cla + mini_cla) / 2
+                df2 = get_weights_gaussian(df, [('omni_CLA', center_cla, std_cla), ('tilt', center_tilt, std_tilt)])
+                temp = df2[df2.weights.values > 0]
+                # temp = externalBL.copy()
+                mapped_feature, valid = knn_weighted_feature_map(temp, 'Vz', 'weights', np.array(
+                    [Xmp.flatten(), Ymp.flatten(), Zmp.flatten()]).T, **kwargs)
+                mapped_feature[valid == 0] = np.nan
+                mapped_feature[Xmp.flatten() < 0.01] = np.nan
+                mapped_feature -= mapped_feature_msh
+                im = ax[i, j].pcolormesh(Ymp, Zmp, gaussian_filter_nan_datas(mapped_feature.reshape(Xmp.shape),
+                                                                             kwargs.get('sigma', 5)), cmap='seismic',
+                                         vmin=-100, vmax=100)
+                fig.colorbar(im, ax=ax[i, j])
+                ax[i, j].axvline(0, linestyle='--', color='k')
+                ax[i, j].axhline(0, linestyle='--', color='k')
+                ax[i, j].set_aspect('equal')
+                mean = np.sum(temp.tilt.values * temp.weights.values) / np.sum(temp.weights.values).item()
+                std = np.sqrt(
+                    np.sum((temp.tilt.values - mean) ** 2 * (temp.weights.values) / np.sum(temp.weights.values)))
+                clas = (temp.omni_CLA.values - center_cla + np.pi) % (2 * np.pi) - np.pi + center_cla
+                mean_cla = np.sum(clas * temp.weights.values) / np.sum(temp.weights.values).item()
+                std_cla = np.sqrt(np.sum((clas - mean_cla) ** 2 * (temp.weights.values) / np.sum(temp.weights.values)))
+                ax[i, j].set_title(
+                    f'{len(temp)} points\nTilt = {round(center_tilt * 180 / np.pi, 2)}° ({round(mean * 180 / np.pi, 2)}' + r'$\pm$' + f'{round(std * 180 / np.pi, 2)}°)\nCLA = {round(center_cla * 180 / np.pi, 2)}° ({round(mean_cla * 180 / np.pi, 2)}' + r'$\pm$' + f'{round(std_cla * 180 / np.pi, 2)}°)')
+                y, z = find_stagnation_line(mapped_feature.reshape(Xmp.shape), Y_mp=Ymp, Z_mp=Zmp, **kwargs)
+                ax[i, j].scatter(y, z, color='green')
+                ax[-1, j].scatter(y, z, label=f'{round((maxi_tilt + mini_tilt) / 2, 2)}°')
+
+    for j in range(3):
+        ax[-1, j].legend()
+        ax[-1, j].set_xlim(-17, 17)
+        ax[-1, j].set_ylim(-17, 17)
+        ax[-1, j].set_aspect('equal')
+
+
+def cla_diag(df, **kwargs):
+    Xmp, Ymp, Zmp = make_mp_grid(N_grid=100, coord='cartesian')
+
+    min_clas = np.array([-np.pi, -5 * np.pi / 4, np.pi / 2])
+    max_clas = np.array([-np.pi / 2, -3 * np.pi / 4, np.pi])
+
+    ncols = 3
+    fig, ax = plt.subplots(ncols=ncols, figsize=(ncols * 5, 5))
+
+    for j, (mini_cla, maxi_cla) in enumerate(zip(min_clas, max_clas)):
+        std_cla = (maxi_cla - mini_cla) / 2
+        center_cla = (maxi_cla + mini_cla) / 2
+        df2 = get_weights_gaussian(df, [('omni_CLA', center_cla, std_cla)])  # ,('tilt',0,15*np.pi/180)])
+        temp = df2[df2.weights.values > 0]
+        # temp=make_slice(externalBL,'omni_CLA',mini_cla,maxi_cla)
+        # temp['weights']=1/len(temp)
+        mapped_feature, valid = knn_weighted_feature_map(temp, 'dVz', 'weights',
+                                                         np.array([Xmp.flatten(), Ymp.flatten(), Zmp.flatten()]).T,
+                                                         **kwargs)
+        mapped_feature[valid == 0] = np.nan
+        mapped_feature[Xmp.flatten() < 0.01] = np.nan
+        im = ax[j].pcolormesh(Ymp, Zmp,
+                              gaussian_filter_nan_datas(mapped_feature.reshape(Xmp.shape), kwargs.get('sigma', 5)),
+                              cmap='seismic', vmin=-100, vmax=100)
+        fig.colorbar(im, ax=ax[j])
+        ax[j].axvline(0, linestyle='--', color='k')
+        ax[j].axhline(0, linestyle='--', color='k')
+        ax[j].set_aspect('equal')
+        clas = (temp.omni_CLA.values - center_cla + np.pi) % (2 * np.pi) - np.pi + center_cla
+        mean_cla = np.sum(clas * temp.weights.values) / np.sum(temp.weights.values).item()
+        std_cla = np.sqrt(np.sum((clas - mean_cla) ** 2 * (temp.weights.values) / np.sum(temp.weights.values)))
+        ax[j].set_title(
+            f'{len(temp)} points\nCLA = {round(center_cla * 180 / np.pi, 2)}° ({round(mean_cla * 180 / np.pi, 2)}' + r'$\pm$' + f'{round(std_cla * 180 / np.pi, 2)}°)')
+
+
+def prepare_data(df, **kwargs):
+    df['normalized_logNoverT'] = df.uniform_depthonly_spectro.values
+    r, theta, phi = mp_shue1997(df.theta.values, df.phi.values, coord_sys='spherical')
+    df['r_MP_Shue'] = r
+    df = reposition(df, Rmin=df.r_MP_Shue.values)
+    df['dVz'] = df.Vz.values - df.Vz_MSH.values
+    if kwargs.get('uniformize_locally', False):
+        df = df[df.locally_uniformized_depthonly_spectro.values > kwargs.get('lower_depth', 0.83)]
+    else:
+        df = df[df.uniform_depthonly_spectro.values > kwargs.get('lower_depth', 0.83)]
+
+    # symetry 1
+    if kwargs.get('symetry_cla', True):
+        df2 = df.copy()
+        df2['Y'] = -df2.Y.values
+        df2['normalized_Y'] = -df2.normalized_Y.values
+        df2['omni_CLA'] = -df2.omni_CLA.values
+        df = pd.concat([df, df2])
+
+    # symetry 2
+    if kwargs.get('symetry_coa', True):
+        df2 = df.copy()
+        df2['Y'] = -df2.Y.values
+        df2['Z'] = -df2.Z.values
+        df2['normalized_Y'] = -df2.normalized_Y.values
+        df2['normalized_Z'] = -df2.normalized_Z.values
+        df2['omni_COA'] = -df2.omni_COA.values
+        df2['tilt'] = -df2.tilt.values
+        df2['Vz'] = -df2.Vz.values
+        df2['Vz_MSH'] = -df2.Vz_MSH.values
+        df2['dVz'] = -df2.dVz.values
+        df = pd.concat([df, df2])
+
     return df
