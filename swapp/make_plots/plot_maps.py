@@ -1124,10 +1124,15 @@ def find_stagnation_line(Vz, **kwargs):
         z_idx, y_idx = stagnation_line[:, 0], stagnation_line[:, 1]
         y_line = [Y_grid[int(i), int(j)] for i, j in zip(z_idx, y_idx)]
         z_line = [Z_grid[int(i), int(j)] for i, j in zip(z_idx, y_idx)]
+        dVz_grid = Vz_smooth[:-1,:]-Vz_smooth[1:,:]
+        dVz_grid = np.array([np.nan*np.ones(len(Vz[0]))]+list(dVz_grid))
+        # If positive, then we go from negative speed at lower z values towards positive speeds towards higher z values,
+        # which corresponds to diverging flows, so potentially a Xline
+        diverging = np.array([dVz_grid[int(i), int(j)]<0 for i, j in zip(z_idx, y_idx)])
+        y_line = list(np.array(y_line)[diverging])
+        z_line = list(np.array(z_line)[diverging])
     else:
         y_line, z_line = [], []
-
-
     return y_line, z_line
 
 
@@ -1583,3 +1588,4 @@ def prepare_data(df, **kwargs):
         df = pd.concat([df, df2])
 
     return df
+
