@@ -1136,6 +1136,54 @@ def find_stagnation_line(Vz, **kwargs):
     return y_line, z_line
 
 
+def find_stagnation_line_2d(Vy, Vz, **kwargs):
+    # Does not return a line, but a band. For the example tested (CLA = 135°),
+    # no diff with the result of stagnation_line with only Vz, but look at the diff for northward cases!
+    if 'Y_mp' and 'Z_mp' in kwargs:
+        Y_grid, Z_grid = kwargs['Y_mp'], kwargs['Z_mp']
+    else:
+        _, Y_grid, Z_grid = make_mp_grid(**kwargs)
+    assert Y_grid.shape == Vz.shape, (f"The coordinate grids must have the same shape as the flow map, but Y_mp is "
+                                      f"{Y_grid.shape}, Z_mp is {Z_grid.shape} and the map is {Vz.shape}.")
+
+    decalage = 5
+    Y_grid = (Y_grid[:-decalage, :-decalage] + Y_grid[:-decalage, decalage:]) / 2
+    Z_grid = (Z_grid[:-decalage, :-decalage] + Z_grid[decalage:, :-decalage]) / 2
+
+    # --- Step decalage: Smooth the data to reduce noise ---
+    Vy_smooth = gaussian_filter_nan_datas(Vy, kwargs.get('sigma', 5))  # Utiliser ma fonction
+    Vz_smooth = gaussian_filter_nan_datas(Vz, kwargs.get('sigma', 5))  # Utiliser ma fonction
+
+    # --- Step 2: Extract the zero contour (stagnation line) ---
+    div = ((Vy_smooth[decalage:, decalage:] + Vy_smooth[:-decalage, decalage:] - Vy_smooth[decalage:, :-decalage] -
+            Vy_smooth[:-decalage, :-decalage]) +
+           (Vz_smooth[:-decalage, :-decalage] + Vz_smooth[:-decalage, decalage:] - Vz_smooth[decalage:, :-decalage] -
+            Vz_smooth[decalage:, decalage:]))
+    div = - div
+
+    Vz_j_plusdecalage = (Vz_smooth[:-decalage, :-decalage] + Vz_smooth[:-decalage, decalage:]) / 2
+    Vz_j = (Vz_smooth[decalage:, :-decalage] + Vz_smooth[decalage:, decalage:]) / 2
+    Vy_j_plusdecalage = (Vy_smooth[:-decalage, :-decalage] + Vy_smooth[:-decalage, decalage:]) / 2
+    Vy_j = (Vy_smooth[decalage:, :-decalage] + Vy_smooth[decalage:, decalage:]) / 2
+    angle = np.arccos((Vz_j_plusdecalage * Vz_j + Vy_j_plusdecalage * Vy_j) / np.sqrt(Vy_j ** 2 + Vz_j ** 2) / np.sqrt(
+        Vy_j_plusdecalage ** 2 + Vz_j_plusdecalage ** 2))
+
+    # --- Step 2: Extract the zero contour (stagnation line) ---
+    contours = measure.find_contours(abs(angle), level=kwargs.get('level', np.pi * 0.6))
+
+    if contours:
+        # stagnation_line = max(contours, key=len)
+        stagnation_line = np.concatenate(contours)
+        y = Y_grid[stagnation_line[:, 0].astype(int), stagnation_line[:, 1].astype(int)]
+        z = Z_grid[stagnation_line[:, 0].astype(int), stagnation_line[:, 1].astype(int)]
+        div = div[stagnation_line[:, 0].astype(int), stagnation_line[:, 1].astype(int)]
+        y, z = y[div > 0], z[div > 0]
+    else:
+        y, z = [], []
+
+    return y, z
+
+
 def equal_sample_data_one_feature(df, feature_to_balance, **kwargs):
     equal_sampled_data = []
 
@@ -1208,46 +1256,6 @@ def equal_sample_data(df, features_to_balance, **kwargs):
         df = equal_sample_data_one_feature(df, feature, **kwargs)
     return df
 
-
-def knn_weighted_feature_map(
-        BL,
-        feature_to_map,
-        weights_feature,
-        Xgrid,  # has the shape of df[['X','Y','Z']].values, but the coordinates of a grid
-        k_neighbors=2000,
-        eps=1e-6, **kwargs):
-    # Sample weight = inverse density
-    sample_weights = BL[weights_feature].values
-    # Normalize for numerical stability (should be already done, but just in case)
-    sample_weights /= np.mean(sample_weights)
-
-    # KNN
-    X = BL[['normalized_X', 'normalized_Y', 'normalized_Z']].values.astype(np.float32)
-    y = BL[feature_to_map].values.astype(np.float64)
-    reg_nn = NearestNeighbors(n_neighbors=k_neighbors)
-    reg_nn.fit(X)
-    distances, indices = reg_nn.kneighbors(Xgrid)
-
-    # Combine weights
-    wd = 1.0 / (distances + eps)
-    # Density-based weights (looked up per neighbor)
-    wc = sample_weights[indices]
-    # Combined weights
-    w = wd * wc
-
-    # Weighted Average
-    y_neighbors = y[indices]
-    mapped_feature = np.sum(w * y_neighbors, axis=1) / np.sum(w, axis=1)
-
-    valid = (np.median(distances, axis=1) <= kwargs.get('median_distance', 3)).astype(float)
-    distance_to_barycenter = np.sqrt((np.median(X[indices, 0], axis=1) - Xgrid[:, 0]) ** 2 + (
-                np.median(X[indices, 1], axis=1) - Xgrid[:, 1]) ** 2 + (
-                                                 np.median(X[indices, 2], axis=1) - Xgrid[:, 2]) ** 2)
-    valid *= (distance_to_barycenter <= kwargs.get('max_distance_barycenter', 1)).astype(float)
-
-    return mapped_feature, valid
-
-
 def knn_mission_participation(
         BL,
         sat,
@@ -1287,29 +1295,6 @@ def knn_mission_participation(
     map_sat_participation[valid == 0] = np.nan
 
     return map_sat_participation
-
-
-def get_weights_gaussian(df, list_conditions):
-    weights = np.ones(len(df))
-
-    for feature, center, std in list_conditions:
-        if feature == 'omni_CLA':
-            clas = (df.omni_CLA.values - center + np.pi) % (2 * np.pi) - np.pi + center
-            weights *= np.exp(-(clas - center) ** 2 / (2 * std ** 2))
-            weights[abs(clas - center) >= std] = 0
-        elif feature == 'omni_COA':
-            coas = (df.omni_COA.values - center + np.pi / 2) % np.pi - np.pi / 2 + center
-            weights *= np.exp(-(coas - center) ** 2 / (2 * std ** 2))
-            weights[abs(coas - center) >= std] = 0
-        else:
-            weights *= np.exp(-(df[feature].values - center) ** 2 / std)
-            weights[abs(df[feature].values - center) >= std] = 0
-
-    weights = weights / np.nansum(weights).item()
-    df2 = df.copy()
-    df2['weights'] = weights
-    return df2
-
 
 def patchup_map_tilt(df, **kwargs):
     Xmp, Ymp, Zmp = make_mp_grid(N_grid=100, coord='cartesian')
@@ -1571,21 +1556,88 @@ def prepare_data(df, **kwargs):
         df2['Y'] = -df2.Y.values
         df2['normalized_Y'] = -df2.normalized_Y.values
         df2['omni_CLA'] = -df2.omni_CLA.values
+        for col in df.columns:
+            if 'Vy' in col:
+                df2[col] = -df[col].values
         df = pd.concat([df, df2])
 
     # symetry 2
     if kwargs.get('symetry_coa', True):
         df2 = df.copy()
-        df2['Y'] = -df2.Y.values
         df2['Z'] = -df2.Z.values
-        df2['normalized_Y'] = -df2.normalized_Y.values
         df2['normalized_Z'] = -df2.normalized_Z.values
         df2['omni_COA'] = -df2.omni_COA.values
+        df2['omni_CLA'] = -df2.omni_CLA.values
         df2['tilt'] = -df2.tilt.values
         df2['Vz'] = -df2.Vz.values
         df2['Vz_MSH'] = -df2.Vz_MSH.values
         df2['dVz'] = -df2.dVz.values
+        for col in df.columns:
+            if 'Vz' in col:
+                df2[col] = -df[col].values
         df = pd.concat([df, df2])
 
     return df
+
+
+def knn_weighted_feature_map(
+        BL,
+        feature_to_map,
+        weights_feature,
+        Xgrid,  # has the shape of df[['X','Y','Z']].values, but the coordinates of a grid
+        k_neighbors=2000,
+        eps=1e-6, **kwargs):
+    # Sample weight = inverse density
+    sample_weights = BL[weights_feature].values
+    # Normalize for numerical stability (should be already done, but just in case)
+    sample_weights /= np.mean(sample_weights)
+
+    # KNN
+    X = BL[['normalized_X', 'normalized_Y', 'normalized_Z']].values.astype(np.float32)
+    y = BL[feature_to_map].values.astype(np.float64)
+    N = len(BL)
+    reg_nn = NearestNeighbors(n_neighbors=k_neighbors)
+    reg_nn.fit(X)
+    distances, indices = reg_nn.kneighbors(Xgrid)
+
+    # Combine weights
+    wd = 1.0 / (distances + eps)
+    # Density-based weights (looked up per neighbor)
+    wc = sample_weights[indices]
+    # Combined weights
+    w = wd * wc
+
+    # Weighted Average
+    y_neighbors = y[indices]
+    mapped_feature = np.sum(w * y_neighbors, axis=1) / np.sum(w, axis=1)
+
+    valid = (np.median(distances, axis=1) <= kwargs.get('median_distance', 3)).astype(float)
+    distance_to_barycenter = np.sqrt((np.median(X[indices, 0], axis=1) - Xgrid[:, 0]) ** 2 + (
+                np.median(X[indices, 1], axis=1) - Xgrid[:, 1]) ** 2 + (
+                                                 np.median(X[indices, 2], axis=1) - Xgrid[:, 2]) ** 2)
+    valid *= (distance_to_barycenter <= kwargs.get('max_distance_barycenter', 1)).astype(float)
+
+    return mapped_feature, valid
+
+
+def get_weights_gaussian(df, list_conditions):
+    weights = np.ones(len(df))
+
+    for feature, center, std in list_conditions:
+        if feature == 'omni_CLA':
+            clas = (df.omni_CLA.values - center + np.pi) % (2 * np.pi) - np.pi + center
+            weights *= np.exp(-(clas - center) ** 2 / (2 * std ** 2))
+            weights[abs(clas - center) >= std] = 0
+        elif feature == 'omni_COA':
+            coas = (df.omni_COA.values - center + np.pi / 2) % np.pi - np.pi / 2 + center
+            weights *= np.exp(-(coas - center) ** 2 / (2 * std ** 2))
+            weights[abs(coas - center) >= std] = 0
+        else:
+            weights *= np.exp(-(df[feature].values - center) ** 2 / std)
+            weights[abs(df[feature].values - center) >= std] = 0
+
+    weights = weights / np.nansum(weights).item()
+    df2 = df.copy()
+    df2['weights'] = weights
+    return df2
 
