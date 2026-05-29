@@ -66,6 +66,48 @@ def gaussian_filter_nan_datas(df, sigma):
     else:
         return df
 
+# This one has been written by gemini
+def gaussian_filter_nan_1d(arr, sigma):
+    if sigma > 0:
+        # Create an array of indices
+        x = np.arange(len(arr))
+        nan_mask = np.isnan(arr)
+
+        # If there are no NaNs or all NaNs, return as is
+        if nan_mask.sum() == 0:
+            return gaussian_filter(arr, sigma=sigma)
+        if nan_mask.sum() == len(arr):
+            return arr
+
+        # Step 1: Interpolate NaN values linearly based on valid indices
+        valid_idx = x[~nan_mask]
+        valid_values = arr[~nan_mask]
+
+        # Create an interpolation function
+        # kind='linear' for the first pass, 'nearest' for edges
+        f_linear = interp1d(valid_idx, valid_values, kind='linear',
+                            bounds_error=False, fill_value="extrapolate")
+        f_nearest = interp1d(valid_idx, valid_values, kind='nearest',
+                             bounds_error=False, fill_value="extrapolate")
+
+        interpolated_arr = arr.copy()
+        # Fill linear gaps
+        interpolated_arr[nan_mask] = f_linear(x[nan_mask])
+
+        # Step 2: Fill remaining NaNs (edges) with nearest neighbor
+        nan_mask2 = np.isnan(interpolated_arr)
+        interpolated_arr[nan_mask2] = f_nearest(x[nan_mask2])
+
+        # Final safety check
+        assert np.isnan(interpolated_arr).sum() == 0, "NaNs remain after filling."
+
+        # Step 3: Apply Gaussian filter and re-apply original NaN mask
+        filtered_arr = gaussian_filter(interpolated_arr, sigma=sigma)
+        filtered_arr[nan_mask] = np.nan
+
+        return filtered_arr
+    else:
+        return arr
 
 def plot_normalized_pannel(df, all_pos, featurex, featurey, fig, bins, sigma, cmap, ax):
     stat, xbins, ybins, _ = binned_statistic_2d(all_pos[featurex].values, all_pos[featurey].values,
